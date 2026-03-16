@@ -47,16 +47,18 @@
   .nav-links a:hover { color: var(--navy); }
   /* ── Platform dropdown ── */
   .nav-dropdown { position: relative; }
-  .nav-dropdown-toggle { font-size: 14px; font-weight: 600; color: var(--teal); background: none; border: none; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 4px; padding: 0; transition: color .15s; }
+  .nav-dropdown-toggle { font-size: 14px; font-weight: 600; color: var(--teal); background: none; border: none; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 4px; padding: 0; transition: color .15s; text-decoration: none; }
   .nav-dropdown-toggle:hover { color: var(--navy); }
   .nav-dropdown-toggle::after { content: '▾'; font-size: 11px; }
   .nav-dropdown-menu {
-    display: none; position: absolute; top: calc(100% + 14px); left: 50%; translate: -50% 0;
-    background: #fff; border: 1px solid var(--gray3); border-radius: 14px;
-    box-shadow: 0 16px 48px rgba(30,58,95,.14); padding: 10px; min-width: 260px; z-index: 200;
+    display: none; position: absolute; top: 100%; left: 50%; translate: -50% 0;
+    padding-top: 14px; z-index: 200; min-width: 260px;
   }
-  .nav-dropdown:hover .nav-dropdown-menu,
-  .nav-dropdown-menu:hover { display: block; }
+  .nav-dropdown-menu-inner {
+    background: #fff; border: 1px solid var(--gray3); border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(30,58,95,.14); padding: 10px;
+  }
+  .nav-dropdown:hover .nav-dropdown-menu { display: block; }
   .nav-dropdown-menu a {
     display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px;
     font-size: 13px; font-weight: 500; color: var(--gray7); text-decoration: none; transition: background .12s;
@@ -344,41 +346,43 @@
     <a href="#testimonials">Customers</a>
     <!-- Platform dropdown -->
     <div class="nav-dropdown">
-      <button class="nav-dropdown-toggle">Platform</button>
+      <a href="app_hub.html" class="nav-dropdown-toggle">Platform</a>
       <div class="nav-dropdown-menu">
-        <a href="transitflow_booking.html" target="_blank">
-          <div class="nav-dd-icon" style="background:#EBF4FD;">🎫</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">Guest Booking Portal</span><span class="nav-dd-role">Guest · Mobile</span></div>
-        </a>
-        <a href="transitflow_dashboard.html" target="_blank">
-          <div class="nav-dd-icon" style="background:#EBF4FD;">📋</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">Booking Dashboard</span><span class="nav-dd-role">Organizer · Live view</span></div>
-        </a>
-        <a href="transitflow_trips.html" target="_blank">
-          <div class="nav-dd-icon" style="background:#EBF4FD;">🚌</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">Trip Management</span><span class="nav-dd-role">Organizer · Routes</span></div>
-        </a>
-        <a href="transitflow_passenger.html" target="_blank">
-          <div class="nav-dd-icon" style="background:#EBF4FD;">📱</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">Passenger My Booking</span><span class="nav-dd-role">Guest · QR Ticket</span></div>
-        </a>
-        <a href="transitflow_email_amend.html" target="_blank">
-          <div class="nav-dd-icon" style="background:#FFF8EE;">📧</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">Email Amendment</span><span class="nav-dd-role">Automation · Self-service</span></div>
-        </a>
-        <a href="transitflow_reports.html" target="_blank">
-          <div class="nav-dd-icon" style="background:#F0FFF6;">📊</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">Reports &amp; Analytics</span><span class="nav-dd-role">Organizer · Revenue</span></div>
-        </a>
-        <a href="transitflow_settings.html" target="_blank">
-          <div class="nav-dd-icon" style="background:#EBF4FD;">⚙️</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">Project Settings</span><span class="nav-dd-role">Organizer · Config</span></div>
-        </a>
-        <div class="nav-dd-divider"></div>
-        <a href="app_hub.html" class="nav-dd-all">
-          <div class="nav-dd-icon" style="background:#EBF4FD;">🗂</div>
-          <div class="nav-dd-text"><span class="nav-dd-name">View All Platform Pages →</span></div>
-        </a>
+        <div class="nav-dropdown-menu-inner">
+          <a href="transitflow_booking.html" target="_blank">
+            <div class="nav-dd-icon" style="background:#EBF4FD;">🎫</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">Guest Booking Portal</span><span class="nav-dd-role">Guest · Mobile</span></div>
+          </a>
+          <a href="transitflow_dashboard.html" target="_blank">
+            <div class="nav-dd-icon" style="background:#EBF4FD;">📋</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">Booking Dashboard</span><span class="nav-dd-role">Organizer · Live view</span></div>
+          </a>
+          <a href="transitflow_trips.html" target="_blank">
+            <div class="nav-dd-icon" style="background:#EBF4FD;">🚌</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">Trip Management</span><span class="nav-dd-role">Organizer · Routes</span></div>
+          </a>
+          <a href="transitflow_passenger.html" target="_blank">
+            <div class="nav-dd-icon" style="background:#EBF4FD;">📱</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">Passenger My Booking</span><span class="nav-dd-role">Guest · QR Ticket</span></div>
+          </a>
+          <a href="transitflow_email_amend.html" target="_blank">
+            <div class="nav-dd-icon" style="background:#FFF8EE;">📧</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">Email Amendment</span><span class="nav-dd-role">Automation · Self-service</span></div>
+          </a>
+          <a href="transitflow_reports.html" target="_blank">
+            <div class="nav-dd-icon" style="background:#F0FFF6;">📊</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">Reports &amp; Analytics</span><span class="nav-dd-role">Organizer · Revenue</span></div>
+          </a>
+          <a href="transitflow_settings.html" target="_blank">
+            <div class="nav-dd-icon" style="background:#EBF4FD;">⚙️</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">Project Settings</span><span class="nav-dd-role">Organizer · Config</span></div>
+          </a>
+          <div class="nav-dd-divider"></div>
+          <a href="app_hub.html" class="nav-dd-all">
+            <div class="nav-dd-icon" style="background:#EBF4FD;">🗂</div>
+            <div class="nav-dd-text"><span class="nav-dd-name">View All Platform Pages →</span></div>
+          </a>
+        </div>
       </div>
     </div>
   </div>
