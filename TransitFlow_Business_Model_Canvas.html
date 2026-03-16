@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TransitFlow — Business Model Canvas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F0F4F8;
+    min-height: 100vh;
+    padding: 28px 20px 48px;
+    color: #1A1A2E;
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .header { text-align: center; margin-bottom: 24px; }
+  .header-label {
+    display: inline-block; background: #1E3A5F; color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.6px;
+    text-transform: uppercase; padding: 5px 14px; border-radius: 20px; margin-bottom: 10px;
+  }
+  .header h1 { font-size: 26px; font-weight: 800; color: #1E3A5F; }
+  .header h1 span { color: #2E86AB; }
+  .header-sub { margin-top: 6px; font-size: 13px; color: #6B7280; }
+
+  /* ── Canvas wrapper ─────────────────────────────────────── */
+  .canvas-wrapper { max-width: 1400px; margin: 0 auto; }
+
+  /* ══ BMC Grid ════════════════════════════════════════════ */
+  /*
+      Layout (9 blocks):
+      [KP] [KA] [VP] [CR] [CS]
+      [KP] [KR] [VP] [CH] [CS]
+                [--cost--] [--revenue--]
+  */
+  .bmc {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr auto;
+    gap: 10px;
+    min-height: 680px;
+  }
+
+  .block {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 18px 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 4px solid transparent;
+  }
+
+  /* Grid placements */
+  .kp { grid-column: 1; grid-row: 1 / 3; border-top-color: #6366F1; }
+  .ka { grid-column: 2; grid-row: 1;     border-top-color: #2E86AB; }
+  .kr { grid-column: 2; grid-row: 2;     border-top-color: #0EA5E9; }
+  .vp { grid-column: 3; grid-row: 1 / 3; border-top-color: #1E3A5F; background: #F5F8FC; }
+  .cr { grid-column: 4; grid-row: 1;     border-top-color: #27AE60; }
+  .ch { grid-column: 4; grid-row: 2;     border-top-color: #84CC16; }
+  .cs { grid-column: 5; grid-row: 1 / 3; border-top-color: #F39C12; }
+  .cost { grid-column: 1 / 4; grid-row: 3; border-top-color: #E05555; border-top-width: 3px; }
+  .rev  { grid-column: 4 / 6; grid-row: 3; border-top-color: #27AE60; border-top-width: 3px; }
+
+  /* ── Block header ─────────────────────────────────────── */
+  .block-label {
+    font-size: 9.5px; font-weight: 700; letter-spacing: 1.3px;
+    text-transform: uppercase; margin-bottom: 2px;
+  }
+  .block-title { font-size: 14px; font-weight: 800; color: #1A1A2E; margin-bottom: 6px; }
+  .block-icon { font-size: 18px; margin-bottom: 2px; }
+
+  /* label colours */
+  .kp .block-label { color: #6366F1; }
+  .ka .block-label { color: #2E86AB; }
+  .kr .block-label { color: #0EA5E9; }
+  .vp .block-label { color: #1E3A5F; }
+  .cr .block-label { color: #27AE60; }
+  .ch .block-label { color: #84CC16; }
+  .cs .block-label { color: #F39C12; }
+  .cost .block-label { color: #E05555; }
+  .rev  .block-label { color: #27AE60; }
+
+  /* ── Item lists ─────────────────────────────────────────── */
+  .item-list { list-style: none; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .item-list li {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 11.5px; line-height: 1.5; color: #374151;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+
+  .dot-indigo { background: #6366F1; }
+  .dot-teal   { background: #2E86AB; }
+  .dot-sky    { background: #0EA5E9; }
+  .dot-navy   { background: #1E3A5F; }
+  .dot-green  { background: #27AE60; }
+  .dot-lime   { background: #84CC16; }
+  .dot-amber  { background: #F39C12; }
+  .dot-red    { background: #E05555; }
+
+  /* ── Value Proposition special styling ─────────────────── */
+  .vp .vp-headline {
+    background: #1E3A5F; color: #fff;
+    font-size: 12.5px; font-weight: 700; line-height: 1.6;
+    padding: 12px 14px; border-radius: 10px; margin-bottom: 10px;
+  }
+  .vp-sub-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; margin: 8px 0 4px;
+  }
+  .sub-a { color: #1E3A5F; }
+  .sub-b { color: #2E86AB; }
+
+  /* ── ICP badge ───────────────────────────────────────────── */
+  .badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 1px 6px; border-radius: 8px; margin-right: 3px; vertical-align: middle; flex-shrink: 0;
+  }
+  .badge-a { background: #E8EEF4; color: #1E3A5F; }
+  .badge-b { background: #E6F4FA; color: #2E86AB; }
+
+  /* ── Cost / Revenue columns ──────────────────────────────── */
+  .cost-rev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cr-col-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .cr-col-label.cost-lbl { color: #E05555; }
+  .cr-col-label.rev-lbl  { color: #27AE60; }
+
+  /* Revenue streams table */
+  .rev-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .rev-table th {
+    background: #F0FFF6; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; color: #27AE60;
+    padding: 6px 8px; text-align: left; border-bottom: 1.5px solid #D1FAE5;
+  }
+  .rev-table td {
+    font-size: 11.5px; color: #374151; padding: 7px 8px;
+    border-bottom: 1px solid #F0F0F0; vertical-align: top;
+  }
+  .rev-table tr:last-child td { border-bottom: none; }
+
+  /* ── CS segment cards ────────────────────────────────────── */
+  .seg-card {
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+  }
+  .seg-card-a { background: #E8EEF4; border-left: 3px solid #1E3A5F; }
+  .seg-card-b { background: #E6F4FA; border-left: 3px solid #2E86AB; }
+  .seg-title { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .seg-title-a { color: #1E3A5F; }
+  .seg-title-b { color: #2E86AB; }
+  .seg-text { font-size: 11px; color: #4B5563; line-height: 1.5; }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #9CA3AF; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-label">Go-To-Market · Business Strategy</div>
+  <h1><span>TransitFlow</span> — Business Model Canvas</h1>
+  <p class="header-sub">Segment: Corporate Event Organizers &nbsp;·&nbsp; March 2026</p>
+</div>
+
+<div class="canvas-wrapper">
+<div class="bmc">
+
+  <!-- ═══ KEY PARTNERS ═══════════════════════════════════ -->
+  <div class="block kp">
+    <div class="block-icon">🤝</div>
+    <div class="block-label">Key Partners</div>
+    <div class="block-title">Who Helps Us Deliver</div>
+    <ul class="item-list">
+      <li><span class="dot dot-indigo"></span><span><strong>Transport vendors & fleet operators</strong> — provide vehicles and drivers that use the TransitFlow driver portal</span></li>
+      <li><span class="dot dot-indigo"></span><span><strong>Event venue & hospitality groups</strong> — referral partners who recommend TransitFlow to their event clients</span></li>
+      <li><span class="dot dot-indigo"></span><span><strong>Corporate travel management companies (TMCs)</strong> — integrate TransitFlow as their ground transport coordination layer</span></li>
+      <li><span class="dot dot-indigo"></span><span><strong>AV & event production companies</strong> — co-sell or refer during event setup phase when transport comes up</span></li>
+      <li><span class="dot dot-indigo"></span><span><strong>HR & MICE platform partners</strong> — integration partnerships with HR software, MICE booking platforms (Cvent, Eventbrite)</span></li>
+      <li><span class="dot dot-indigo"></span><span><strong>Cloud & mapping providers</strong> — AWS/GCP for hosting, Google Maps / HERE for live GPS and routing</span></li>
+      <li><span class="dot dot-indigo"></span><span><strong>Email delivery service</strong> — SendGrid / Postmark for reliable magic link and amendment notification delivery</span></li>
+    </ul>
+  </div>
+
+  <!-- ═══ KEY ACTIVITIES ═════════════════════════════════ -->
+  <div class="block ka">
+    <div class="block-icon">⚙️</div>
+    <div class="block-label">Key Activities</div>
+    <div class="block-title">What We Do Every Day</div>
+    <ul class="item-list">
+      <li><span class="dot dot-teal"></span><span><strong>Product development</strong> — build and maintain the web platform, driver portal, passenger magic link, and analytics modules</span></li>
+      <li><span class="dot dot-teal"></span><span><strong>Customer onboarding</strong> — help event organizers set up their first event quickly; time-to-value &lt; 1 hour</span></li>
+      <li><span class="dot dot-teal"></span><span><strong>Sales & partnerships</strong> — outbound to marketing managers, HR managers, EAs, and event agencies; partner channel development</span></li>
+      <li><span class="dot dot-teal"></span><span><strong>Customer success</strong> — proactive support during live events; post-event reviews with professional organizers</span></li>
+      <li><span class="dot dot-teal"></span><span><strong>Platform reliability</strong> — 99.9% uptime SLA; live event support coverage during peak hours</span></li>
+    </ul>
+  </div>
+
+  <!-- ═══ VALUE PROPOSITION ══════════════════════════════ -->
+  <div class="block vp">
+    <div class="block-icon">✦</div>
+    <div class="block-label">Value Proposition</div>
+    <div class="block-title">Why Customers Choose Us</div>
+
+    <div class="vp-headline">
+      Purpose-built event transport management — real-time control for organizers, seamless experience for attendees. No app download. No chaos on the day.
+    </div>
+
+    <div class="vp-sub-label sub-a">Type A — In-House Organizer</div>
+    <ul class="item-list">
+      <li><span class="dot dot-navy"></span><span>Replace WhatsApp coordination with one dashboard and instant amendment notifications</span></li>
+      <li><span class="dot dot-navy"></span><span>Every attendee gets a live GPS link — zero "where is my shuttle?" calls on event day</span></li>
+      <li><span class="dot dot-navy"></span><span>Post-event cost and utilisation report for Finance — justify the transport budget</span></li>
+    </ul>
+
+    <div class="vp-sub-label sub-b" style="margin-top:10px">Type B — Professional Organizer</div>
+    <ul class="item-list">
+      <li><span class="dot dot-teal"></span><span>Manage 10 transport legs, multiple vehicles and drivers — from one screen</span></li>
+      <li><span class="dot dot-teal"></span><span>Branded attendee experience that reflects the quality of your agency's delivery</span></li>
+      <li><span class="dot dot-teal"></span><span>Client-ready debrief report after every event — builds trust and wins repeat business</span></li>
+    </ul>
+  </div>
+
+  <!-- ═══ CUSTOMER RELATIONSHIPS ═════════════════════════ -->
+  <div class="block cr">
+    <div class="block-icon">💬</div>
+    <div class="block-label">Customer Relationships</div>
+    <div class="block-title">How We Engage</div>
+    <ul class="item-list">
+      <li><span class="dot dot-green"></span><span><span class="badge badge-a">A</span> <strong>Self-serve onboarding</strong> — setup wizard; first event live in &lt;1 hour with no sales call required</span></li>
+      <li><span class="dot dot-green"></span><span><span class="badge badge-b">B</span> <strong>Dedicated success manager</strong> — assigned to professional organizers running 10+ events/year</span></li>
+      <li><span class="dot dot-green"></span><span><span class="badge badge-a">A</span><span class="badge badge-b">B</span> <strong>Live event support</strong> — in-app chat and phone line available during active events</span></li>
+      <li><span class="dot dot-green"></span><span><span class="badge badge-b">B</span> <strong>Post-event review</strong> — quarterly business reviews for agency customers; share analytics and improvement recommendations</span></li>
+      <li><span class="dot dot-green"></span><span><strong>Community</strong> — event organizer knowledge base, webinars, and peer case studies</span></li>
+    </ul>
+  </div>
+
+  <!-- ═══ CHANNELS ════════════════════════════════════════ -->
+  <div class="block ch">
+    <div class="block-icon">📣</div>
+    <div class="block-label">Channels</div>
+    <div class="block-title">How We Reach Them</div>
+    <ul class="item-list">
+      <li><span class="dot dot-lime"></span><span><strong>LinkedIn outreach</strong> — direct to Marketing Mgrs, HR Mgrs, EAs at 200–5,000-person companies in SE Asia</span></li>
+      <li><span class="dot dot-lime"></span><span><strong>Event industry associations</strong> — MICE conferences, PCMA / SITE chapter presence; sponsor or speak</span></li>
+      <li><span class="dot dot-lime"></span><span><strong>Partner referrals</strong> — venue, AV, and TMC partners recommend TransitFlow during event planning conversations</span></li>
+      <li><span class="dot dot-lime"></span><span><strong>Inbound SEO</strong> — content targeting "event shuttle management", "corporate transport for events" search queries</span></li>
+      <li><span class="dot dot-lime"></span><span><strong>Free trial / interactive demo</strong> — self-serve signup; demo at transitflow_demo.html lowers barrier to evaluate</span></li>
+    </ul>
+  </div>
+
+  <!-- ═══ CUSTOMER SEGMENTS ══════════════════════════════ -->
+  <div class="block cs">
+    <div class="block-icon">🎯</div>
+    <div class="block-label">Customer Segments</div>
+    <div class="block-title">Who We Serve</div>
+
+    <div class="seg-card seg-card-a">
+      <div class="seg-title seg-title-a">Type A — In-House Organizer</div>
+      <div class="seg-text">
+        Marketing Manager, HR Manager, or Executive Assistant at a 200–5,000-person company in SE Asia. Organizes 2–12 corporate events per year (townhalls, offsites, annual parties) with 50–500 attendees requiring transport. Not a transport specialist — coordination is a stressful side task.
+      </div>
+    </div>
+
+    <div class="seg-card seg-card-b">
+      <div class="seg-title seg-title-b">Type B — Professional Organizer</div>
+      <div class="seg-text">
+        Event Director, Coordinator, or Freelance Planner at an event agency or working independently. Manages 10–50+ events per year for corporate clients. Transport is a service they sell and deliver. Reputation depends on flawless execution across multiple complex transport legs per event.
+      </div>
+    </div>
+
+    <ul class="item-list" style="margin-top:6px">
+      <li><span class="dot dot-amber"></span><span><strong>Event size:</strong> 50–2,000 attendees requiring ground transport</span></li>
+      <li><span class="dot dot-amber"></span><span><strong>Geography:</strong> SE Asia primary — Thailand, Vietnam, Indonesia, Malaysia</span></li>
+    </ul>
+  </div>
+
+  <!-- ═══ KEY RESOURCES ══════════════════════════════════ -->
+  <div class="block kr">
+    <div class="block-icon">🏗️</div>
+    <div class="block-label">Key Resources</div>
+    <div class="block-title">What We Need to Deliver</div>
+    <ul class="item-list">
+      <li><span class="dot dot-sky"></span><span><strong>Platform & technology</strong> — the web app, driver portal, real-time GPS layer, and analytics engine</span></li>
+      <li><span class="dot dot-sky"></span><span><strong>Token & security architecture</strong> — single-use magic links for passengers and drivers; no account or app needed</span></li>
+      <li><span class="dot dot-sky"></span><span><strong>Product & engineering team</strong> — core IP; builds and maintains all features and infrastructure</span></li>
+      <li><span class="dot dot-sky"></span><span><strong>Event transport domain expertise</strong> — knowledge of MICE, corporate event logistics, and organizer workflows</span></li>
+      <li><span class="dot dot-sky"></span><span><strong>Customer data & event history</strong> — powers analytics, post-event reports, and product improvement</span></li>
+    </ul>
+  </div>
+
+  <!-- ═══ COST STRUCTURE ═════════════════════════════════ -->
+  <div class="block cost">
+    <div class="block-label">Cost Structure</div>
+    <div class="block-title">💸 &nbsp;Where Money Goes</div>
+    <div class="cost-rev-grid">
+      <div>
+        <div class="cr-col-label cost-lbl">Fixed Costs</div>
+        <ul class="item-list">
+          <li><span class="dot dot-red"></span><span><strong>Engineering & product team</strong> — salaries for core dev, product, and design</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Cloud infrastructure</strong> — hosting, CDN, database, GPS API, email delivery</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Security & compliance</strong> — penetration testing, data privacy, PDPA/GDPR compliance</span></li>
+          <li><span class="dot dot-red"></span><span><strong>G&A</strong> — legal, finance, HR, office</span></li>
+        </ul>
+      </div>
+      <div>
+        <div class="cr-col-label cost-lbl">Variable Costs</div>
+        <ul class="item-list">
+          <li><span class="dot dot-red"></span><span><strong>Sales & marketing</strong> — outbound campaigns, events, content, partnership development</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Customer success</strong> — onboarding, live event support, account management</span></li>
+          <li><span class="dot dot-red"></span><span><strong>GPS & mapping API calls</strong> — scales with number of active trips</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Email/SMS sends</strong> — magic links, notifications, amendment alerts per event</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REVENUE STREAMS ════════════════════════════════ -->
+  <div class="block rev">
+    <div class="block-label">Revenue Streams</div>
+    <div class="block-title">💰 &nbsp;How We Make Money</div>
+    <table class="rev-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Target</th>
+          <th>Pricing Signal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Per-event credit</strong></td>
+          <td><span class="badge badge-a">A</span> In-house organizers</td>
+          <td>$100–$400 per event based on vehicle count and attendees — no commitment needed</td>
+        </tr>
+        <tr>
+          <td><strong>Monthly subscription</strong></td>
+          <td><span class="badge badge-b">B</span> Professional organizers</td>
+          <td>$300–$800/month for unlimited events up to a vehicle cap — best for agencies running 4+ events/month</td>
+        </tr>
+        <tr>
+          <td><strong>Annual plan</strong></td>
+          <td><span class="badge badge-a">A</span><span class="badge badge-b">B</span> Both types</td>
+          <td>20% discount vs monthly; enterprise pricing for 10+ events/month or large-fleet programs</td>
+        </tr>
+        <tr>
+          <td><strong>White-label</strong></td>
+          <td><span class="badge badge-b">B</span> Agencies</td>
+          <td>Premium add-on: custom branding on passenger links and reports — positioned as agency differentiator</td>
+        </tr>
+        <tr>
+          <td><strong>Add-ons</strong></td>
+          <td><span class="badge badge-a">A</span><span class="badge badge-b">B</span> Both types</td>
+          <td>Extra analytics exports, API access, dedicated event-day support tier</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- end .bmc -->
+</div><!-- end .canvas-wrapper -->
+
+<div class="footer">
+  TransitFlow · Business Model Canvas · Corporate Event Organizers · March 2026 · Confidential
+</div>
+
+</body>
+</html>
