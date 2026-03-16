@@ -20,7 +20,15 @@
     align-items: center; justify-content: center;
     min-height: 100vh;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    overflow: hidden; gap: 14px;
+    overflow-x: hidden; gap: 14px;
+    padding: 16px 0;
+  }
+
+  /* ── Stage wrapper — sizes to the scaled stage ──────── */
+  #stage-wrap {
+    position: relative;
+    /* width & height set dynamically by scaleStage() */
+    flex-shrink: 0;
   }
 
   /* ── Stage 16:9 ─────────────────────────────────────── */
@@ -29,6 +37,15 @@
     position: relative; overflow: hidden;
     background: #0a1628; border-radius: 8px;
     box-shadow: 0 0 90px rgba(46,134,171,.25), 0 0 0 1px rgba(255,255,255,.06);
+    transform-origin: top left;
+    /* transform: scale() applied by scaleStage() */
+  }
+
+  /* ── Controls — shrink on very small screens ─────────── */
+  @media (max-width: 480px) {
+    #controls { gap: 6px; padding: 6px 10px; }
+    .ctrl-btn  { width: 28px; height: 28px; font-size: 12px; }
+    .ctrl-time, .ctrl-sep { font-size: 11px; }
   }
 
   /* ── Progress ───────────────────────────────────────── */
@@ -364,6 +381,7 @@
 </head>
 <body>
 
+<div id="stage-wrap">
 <div id="stage">
   <div id="logo-wm">Transit<span>Flow</span></div>
   <div id="timer">0:42</div>
@@ -701,7 +719,8 @@
     <button class="replay-btn" onclick="restartDemo()">▶ Watch Again</button>
     <div class="replay-sub">transitflow.io — Full Product Demo</div>
   </div>
-</div>
+</div><!-- /#stage -->
+</div><!-- /#stage-wrap -->
 
 <div id="controls">
   <button class="ctrl-btn" onclick="prevScene()">⏮</button>
@@ -712,6 +731,40 @@
 </div>
 
 <script>
+// ── Responsive stage scaling ─────────────────────────────
+function scaleStage() {
+  const stage = document.getElementById('stage');
+  const wrap  = document.getElementById('stage-wrap');
+  const STAGE_W = 960, STAGE_H = 540;
+
+  // Available space: full viewport width, viewport height minus controls + padding
+  const controlsEl = document.getElementById('controls');
+  const controlsH  = controlsEl ? controlsEl.offsetHeight + 28 : 60; // 28 = gap + padding
+  const availW = window.innerWidth;
+  const availH = window.innerHeight - controlsH - 32; // 32 = body top+bottom padding
+
+  const scaleByW = availW / STAGE_W;
+  const scaleByH = availH / STAGE_H;
+  const scale    = Math.min(1, scaleByW, scaleByH);
+
+  stage.style.transform = `scale(${scale})`;
+
+  // Size the wrapper to exactly the visible scaled stage footprint
+  const scaledW = Math.round(STAGE_W * scale);
+  const scaledH = Math.round(STAGE_H * scale);
+  wrap.style.width  = scaledW + 'px';
+  wrap.style.height = scaledH + 'px';
+
+  // Soften border-radius on tiny screens
+  stage.style.borderRadius = scale < 0.5 ? '4px' : '8px';
+}
+
+// Run on load and every resize
+window.addEventListener('resize', scaleStage);
+document.addEventListener('DOMContentLoaded', scaleStage);
+// Also call immediately in case DOMContentLoaded already fired
+scaleStage();
+
 // ── QR Grid ─────────────────────────────────────────────
 (function buildQR() {
   const g = document.getElementById('qr-grid');
