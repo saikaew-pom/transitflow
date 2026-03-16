@@ -207,6 +207,98 @@
   /* ── Toast ───────────────────────────────────────────── */
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--navy); color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 13.5px; font-weight: 500; z-index: 9999; transition: transform .35s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 8px 30px rgba(0,0,0,.2); pointer-events: none; }
   .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Mobile inbox toggle button ──────────────────────── */
+  .inbox-toggle-btn {
+    display: none;
+    width: 100%;
+    padding: 9px 18px;
+    background: var(--gray0);
+    border: none;
+    border-bottom: 1px solid var(--gray3);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--teal);
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    align-items: center;
+    gap: 8px;
+  }
+  .inbox-toggle-btn::after { content: '▼'; margin-left: auto; font-size: 10px; transition: transform .2s; }
+  .inbox-toggle-btn.collapsed::after { transform: rotate(-90deg); }
+
+  /* ── Tablet / mobile (≤900px) ────────────────────────── */
+  @media (max-width: 900px) {
+    /* App chrome: compact */
+    .app-chrome { padding: 0 14px; gap: 8px; flex-wrap: wrap; height: auto; min-height: 52px; }
+    .chrome-logo { font-size: 14px; }
+    .chrome-logo > span:last-of-type { display: none; } /* hide "Mail & Booking Portal" subtitle */
+    .step-indicator { display: none; } /* hide step tracker — too wide for mobile */
+    .chrome-spacer { display: none; }
+
+    /* Layout: stack vertically */
+    .layout { flex-direction: column; }
+
+    /* Inbox panel: full-width, max-height collapsed */
+    .email-panel {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--gray3);
+      max-height: 200px;
+      overflow: hidden;
+      transition: max-height .3s ease;
+      flex-shrink: 0;
+    }
+    .email-panel.expanded { max-height: 400px; }
+
+    /* Show inbox toggle button */
+    .inbox-toggle-btn { display: flex; }
+
+    /* View panel: normal scroll */
+    .view-panel { flex: 1; overflow-y: auto; }
+
+    /* Email viewer: less margin */
+    .email-viewer, .amend-portal { margin: 16px; max-width: none; }
+
+    /* Form grid: single column */
+    .form-grid { grid-template-columns: 1fr; gap: 12px; }
+
+    /* Action bar: wrap */
+    .action-bar { flex-wrap: wrap; gap: 8px; }
+    .action-bar .btn { flex: 1 1 auto; justify-content: center; min-width: 140px; }
+
+    /* CTA buttons in email body: stack */
+    .mail-cta-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .mail-cta-amend { margin-left: 0; }
+
+    /* Email viewer meta: allow wrap */
+    .ev-meta { flex-wrap: wrap; gap: 6px; }
+    .ev-date { width: 100%; }
+
+    /* ev-actions: wrap */
+    .ev-actions { flex-wrap: wrap; gap: 6px; }
+
+    /* Success card: less padding */
+    .success-card { margin: 16px; padding: 28px 20px; }
+  }
+
+  /* ── Small mobile (≤480px) ───────────────────────────── */
+  @media (max-width: 480px) {
+    .app-chrome { padding: 0 12px; }
+    .chrome-tab { padding: 6px 10px; font-size: 12px; }
+    .email-viewer, .amend-portal { margin: 10px; }
+    .mail-body { padding: 20px 16px; }
+    .mail-cta-main, .mail-cta-amend { width: 100%; text-align: center; padding: 14px 20px; }
+    .ap-title { font-size: 17px; }
+    .ap-header { padding: 18px 16px; }
+    .leg-body { padding: 14px; }
+    .success-card { margin: 10px; padding: 24px 16px; }
+    /* Modal: tighter */
+    .modal { padding: 20px 16px; }
+    .modal-actions { flex-direction: column; }
+    .modal-actions .btn { width: 100%; justify-content: center; }
+  }
 </style>
 </head>
 <body>
@@ -233,7 +325,8 @@
 <div class="layout">
 
   <!-- Left: Inbox -->
-  <div class="email-panel">
+  <div class="email-panel" id="emailPanel">
+    <button class="inbox-toggle-btn" id="inboxToggle" onclick="toggleInbox()">📬 Inbox — 3 messages · 1 unread</button>
     <div class="email-topbar">
       <div>
         <div class="email-topbar-title">📬 Inbox — james.whitfield@summit.org</div>
@@ -696,6 +789,14 @@ function viewAmendedEmail() {
   document.querySelectorAll('.inbox-row').forEach(r => r.classList.remove('selected'));
   document.getElementById('amend-confirm-row').classList.add('selected');
   selectEmail('amended');
+}
+
+// ── Mobile inbox toggle ────────────────────────────────
+function toggleInbox() {
+  const panel = document.getElementById('emailPanel');
+  const btn   = document.getElementById('inboxToggle');
+  panel.classList.toggle('expanded');
+  btn.classList.toggle('collapsed', !panel.classList.contains('expanded'));
 }
 
 // ── Toast ──────────────────────────────────────────────
