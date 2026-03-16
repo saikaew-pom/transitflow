@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransitFlow — Full Interactive Demo</title>
+<style>
+  :root {
+    --navy: #1E3A5F;
+    --navy-dark: #152d4a;
+    --teal: #2E86AB;
+    --green: #27AE60;
+    --amber: #F39C12;
+    --red: #E74C3C;
+    --purple: #8B5CF6;
+    --gray: #6C757D;
+    --sidebar-w: 280px;
+    --header-h: 64px;
+    --guide-h: 108px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f1923;
+    color: #fff;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  #header {
+    height: var(--header-h);
+    background: var(--navy-dark);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 20px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--teal), var(--navy));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .demo-badge {
+    background: linear-gradient(135deg, var(--teal), #1a6e8f);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .header-title {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.3px;
+  }
+
+  .header-title strong {
+    color: rgba(255,255,255,0.9);
+    font-weight: 600;
+  }
+
+  /* Progress dots in header */
+  .header-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hprog-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .hprog-dot.done { background: var(--green); }
+  .hprog-dot.active { background: var(--teal); width: 22px; border-radius: 4px; }
+
+  /* ── BODY LAYOUT ─────────────────────────────────────── */
+  #body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ─────────────────────────────────────────── */
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--navy-dark);
+    border-right: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .sidebar-label {
+    padding: 14px 20px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .steps-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .steps-list::-webkit-scrollbar { width: 4px; }
+  .steps-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+  }
+
+  .step-item:hover { background: rgba(255,255,255,0.04); }
+  .step-item.active { background: rgba(46,134,171,0.15); }
+  .step-item.active::left { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--teal); }
+
+  /* Active left bar */
+  .step-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--teal);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .step-number-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.4);
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+
+  .step-item.active .step-num {
+    background: var(--teal);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(46,134,171,0.25);
+  }
+
+  .step-item.done .step-num {
+    background: var(--green);
+    color: #fff;
+  }
+
+  .step-connector {
+    width: 2px;
+    height: 24px;
+    background: rgba(255,255,255,0.08);
+    margin-top: 4px;
+  }
+
+  .step-item.done .step-connector { background: rgba(39,174,96,0.4); }
+
+  .step-info { flex: 1; min-width: 0; }
+
+  .step-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    transition: color 0.3s;
+    line-height: 1.3;
+  }
+
+  .step-item.active .step-title { color: #fff; }
+  .step-item.done .step-title { color: rgba(255,255,255,0.7); }
+
+  .step-subtitle {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 2px;
+  }
+
+  .step-item.active .step-subtitle { color: rgba(255,255,255,0.5); }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-top: 5px;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── MAIN AREA ─────────────────────────────────────── */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background: #1a2332;
+  }
+
+  /* iframe wrapper */
+  #frame-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #demo-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+    display: block;
+  }
+
+  /* ── HINT OVERLAY ────────────────────────────────────── */
+  #hint-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity 0.4s;
+  }
+
+  .hint-bubble {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  /* Pulsing ring */
+  .hint-ring {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 3px solid var(--amber);
+    position: relative;
+    animation: hintPulse 1.6s ease-in-out infinite;
+  }
+
+  .hint-ring::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(243,156,18,0.35);
+    animation: hintPulse2 1.6s ease-in-out infinite 0.3s;
+  }
+
+  .hint-ring::after {
+    content: '👆';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  @keyframes hintPulse {
+    0%, 100% { transform: scale(1); opacity: 1; border-color: var(--amber); }
+    50% { transform: scale(1.15); opacity: 0.8; border-color: #ffbc40; }
+  }
+
+  @keyframes hintPulse2 {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 0; }
+  }
+
+  .hint-label {
+    background: rgba(15,25,35,0.92);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    letter-spacing: 0.2px;
+    animation: labelFloat 2s ease-in-out infinite;
+  }
+
+  @keyframes labelFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /* ── GUIDANCE BAR ────────────────────────────────────── */
+  #guide-bar {
+    height: var(--guide-h);
+    background: var(--navy-dark);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+
+  .guide-role {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    width: 72px;
+  }
+
+  .role-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    transition: all 0.4s;
+  }
+
+  .role-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+
+  .guide-divider {
+    width: 1px;
+    height: 60px;
+    background: rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+
+  .guide-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .guide-step-label {
+    font-size: 11px;
+    color: var(--teal);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .guide-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .guide-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .guide-hint-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    font-size: 11.5px;
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  .hint-arrow { animation: arrowBounce 1s ease-in-out infinite; display: inline-block; }
+  @keyframes arrowBounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(4px); }
+  }
+
+  .guide-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .nav-btns {
+    display: flex;
+    gap: 8px;
+  }
+
+  .nav-btn {
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .nav-btn.prev {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.6);
+  }
+
+  .nav-btn.prev:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  .nav-btn.prev:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .nav-btn.next {
+    background: var(--teal);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(46,134,171,0.35);
+  }
+
+  .nav-btn.next:hover { background: #2678a0; box-shadow: 0 4px 16px rgba(46,134,171,0.5); }
+  .nav-btn.next:disabled { opacity: 0.4; cursor: not-allowed; background: var(--gray); box-shadow: none; }
+
+  .nav-btn.restart {
+    background: rgba(39,174,96,0.15);
+    color: var(--green);
+    border: 1px solid rgba(39,174,96,0.3);
+  }
+
+  .nav-btn.restart:hover { background: rgba(39,174,96,0.25); }
+
+  .step-counter {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+
+  /* ── INTRO / WELCOME OVERLAY ──────────────────────── */
+  #welcome-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,18,28,0.97);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.6s, visibility 0.6s;
+  }
+
+  #welcome-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .welcome-card {
+    background: linear-gradient(160deg, #1a2d45 0%, #152234 100%);
+    border: 1px solid rgba(46,134,171,0.3);
+    border-radius: 20px;
+    padding: 48px 52px;
+    max-width: 560px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+
+  .wc-logo {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--teal), var(--navy));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 30px rgba(46,134,171,0.4);
+  }
+
+  .wc-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .wc-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .wc-journey {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .wc-step-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+  }
+
+  .wc-step-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(46,134,171,0.15);
+    border: 1.5px solid rgba(46,134,171,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .wc-step-name {
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .wc-arrow {
+    color: rgba(46,134,171,0.5);
+    font-size: 14px;
+    padding-bottom: 14px;
+  }
+
+  .wc-roles {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .wc-role-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+  }
+
+  .start-btn {
+    background: linear-gradient(135deg, var(--teal), #1a6e8f);
+    color: #fff;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    box-shadow: 0 6px 24px rgba(46,134,171,0.45);
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 32px rgba(46,134,171,0.55);
+  }
+
+  .start-note {
+    font-size: 11px;
+    color: rgba(255,255,255,0.25);
+    margin-top: 12px;
+  }
+
+  /* ── COMPLETION OVERLAY ──────────────────────────── */
+  #complete-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,18,28,0.97);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s, visibility 0.6s;
+  }
+
+  #complete-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .complete-card {
+    background: linear-gradient(160deg, #1a2d45 0%, #152234 100%);
+    border: 1px solid rgba(39,174,96,0.3);
+    border-radius: 20px;
+    padding: 48px 52px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+
+  .cc-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    display: block;
+    animation: ccBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.2s both;
+  }
+
+  @keyframes ccBounce {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .cc-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--green);
+    margin-bottom: 10px;
+  }
+
+  .cc-desc {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  .cc-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .cc-btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .cc-btn.primary {
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(39,174,96,0.3);
+  }
+
+  .cc-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(39,174,96,0.45); }
+
+  .cc-btn.secondary {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.6);
+  }
+
+  .cc-btn.secondary:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+  /* ── TRANSITION FLASH ─────────────────────────────── */
+  #transition-flash {
+    position: absolute;
+    inset: 0;
+    background: rgba(46,134,171,0.15);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 60;
+    transition: opacity 0.15s;
+  }
+
+  #transition-flash.flash { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <div class="logo-icon">🚐</div>
+    TransitFlow
+  </div>
+  <div class="demo-badge">Interactive Demo</div>
+  <div class="header-title">Follow the guided journey — <strong>8 screens</strong> from visitor to full platform mastery</div>
+  <div class="header-progress" id="hprog"></div>
+</div>
+
+<!-- BODY -->
+<div id="body">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-label">Platform Journey</div>
+    <div class="steps-list" id="steps-list"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- iframe -->
+    <div id="frame-wrap">
+      <iframe id="demo-frame" src="" title="TransitFlow Demo"></iframe>
+
+      <!-- Hint overlay -->
+      <div id="hint-overlay">
+        <div class="hint-bubble" id="hint-bubble" style="display:none;">
+          <div class="hint-ring"></div>
+          <div class="hint-label" id="hint-label">Click here to continue</div>
+        </div>
+      </div>
+
+      <!-- Transition flash -->
+      <div id="transition-flash"></div>
+
+      <!-- Welcome overlay -->
+      <div id="welcome-overlay">
+        <div class="welcome-card">
+          <div class="wc-logo">🚐</div>
+          <div class="wc-title">TransitFlow Platform</div>
+          <div class="wc-subtitle">Walk through the complete journey — from a visitor discovering the platform to an admin reviewing post-event analytics.</div>
+
+          <div class="wc-journey" id="wc-journey"></div>
+
+          <div class="wc-roles">
+            <div class="wc-role-tag"><span>🌐</span> Visitor</div>
+            <div class="wc-role-tag"><span>👤</span> Passenger</div>
+            <div class="wc-role-tag"><span>🗂️</span> Event Organizer</div>
+            <div class="wc-role-tag"><span>⚙️</span> Admin</div>
+          </div>
+
+          <button class="start-btn" onclick="startDemo()">▶ Start Guided Tour</button>
+          <div class="start-note">Each screen has a highlighted call-to-action — explore freely, then click Next to advance</div>
+        </div>
+      </div>
+
+      <!-- Completion overlay -->
+      <div id="complete-overlay">
+        <div class="complete-card">
+          <span class="cc-icon">🎉</span>
+          <div class="cc-title">Tour Complete!</div>
+          <div class="cc-desc">
+            You've walked through the full TransitFlow platform journey — from landing page to post-event analytics.<br><br>
+            Every page is a live interactive prototype ready for developer handoff.
+          </div>
+          <div class="cc-actions">
+            <button class="cc-btn primary" onclick="restartDemo()">↩ Restart Tour</button>
+            <button class="cc-btn secondary" onclick="goToStep(0)">🏠 Back to Start</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guidance bar -->
+    <div id="guide-bar">
+      <div class="guide-role">
+        <div class="role-avatar" id="role-avatar">🌐</div>
+        <div class="role-name" id="role-name">Visitor</div>
+      </div>
+
+      <div class="guide-divider"></div>
+
+      <div class="guide-content">
+        <div class="guide-step-label" id="guide-step-label">Step 1 of 8</div>
+        <div class="guide-title" id="guide-title">Landing Page</div>
+        <div class="guide-desc" id="guide-desc">Explore the platform and discover TransitFlow's features.</div>
+        <div class="guide-hint-line">
+          <span class="hint-arrow">→</span>
+          <span id="guide-hint-text">Click 'Get Started' in the hero section</span>
+        </div>
+      </div>
+
+      <div class="guide-divider"></div>
+
+      <div class="guide-nav">
+        <div class="nav-btns">
+          <button class="nav-btn prev" id="btn-prev" onclick="prevStep()" disabled>← Prev</button>
+          <button class="nav-btn next" id="btn-next" onclick="nextStep()">Next →</button>
+        </div>
+        <div class="step-counter" id="step-counter">Step 1 of 8</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /body -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const STEPS = [
+  {
+    id: 1,
+    title: "Landing Page",
+    subtitle: "Discover the platform",
+    role: "Visitor",
+    roleIcon: "🌐",
+    roleColor: "#6C757D",
+    url: "transitflow_landing.html",
+    description: "A potential client lands on the TransitFlow marketing page. They learn about pain points, features, pricing, and decide to get started.",
+    hintText: "Click 'Book Your Transfer' or 'Get Started Free'",
+    hintX: 50,   // % from left of iframe
+    hintY: 51,   // % from top of iframe
+    icon: "🏠"
+  },
+  {
+    id: 2,
+    title: "Passenger Booking",
+    subtitle: "Book a transfer",
+    role: "Passenger",
+    roleIcon: "👤",
+    roleColor: "#2E86AB",
+    url: "transitflow_booking.html",
+    description: "The passenger fills in trip details — airport, hotel, group size — applies a promo code and completes payment online. A booking confirmation is issued instantly.",
+    hintText: "Try promo code 'VIP15', then continue to payment",
+    hintX: 50,
+    hintY: 58,
+    icon: "🎫"
+  },
+  {
+    id: 3,
+    title: "EO Dashboard",
+    subtitle: "Review all bookings",
+    role: "Event Organizer",
+    roleIcon: "🗂️",
+    roleColor: "#27AE60",
+    url: "transitflow_dashboard.html",
+    description: "The Event Organizer sees the new booking appear in real-time. They can review details, update booking status, filter by trip direction, and monitor all reservations in one place.",
+    hintText: "Click any booking row to open the detail side panel",
+    hintX: 62,
+    hintY: 50,
+    icon: "📋"
+  },
+  {
+    id: 4,
+    title: "Trip Management",
+    subtitle: "Assign drivers & vehicles",
+    role: "Event Organizer",
+    roleIcon: "🗂️",
+    roleColor: "#27AE60",
+    url: "transitflow_trips.html",
+    description: "Trips are auto-grouped by airport and time window. The EO can assign drivers, generate magic links, handle split requests, and monitor capacity across all vehicles.",
+    hintText: "Click 'Assign Driver' on a trip card to send a magic link",
+    hintX: 72,
+    hintY: 44,
+    icon: "🚐"
+  },
+  {
+    id: 5,
+    title: "Passenger View",
+    subtitle: "My booking & QR pass",
+    role: "Passenger",
+    roleIcon: "👤",
+    roleColor: "#2E86AB",
+    url: "transitflow_passenger.html",
+    description: "The passenger accesses their booking via a magic link in their confirmation email. No login required. They view their QR boarding pass, driver details, payment summary, and trip status.",
+    hintText: "Tap the QR tab to reveal your digital boarding pass",
+    hintX: 50,
+    hintY: 30,
+    icon: "📱"
+  },
+  {
+    id: 6,
+    title: "Email Amendment",
+    subtitle: "Change booking details",
+    role: "Passenger",
+    roleIcon: "👤",
+    roleColor: "#2E86AB",
+    url: "transitflow_email_amend.html",
+    description: "The passenger receives their confirmation email and needs to update their guest count. They click the secure amend link, make changes, and instantly receive a new confirmation with updated pricing.",
+    hintText: "Click the confirmation email, then tap 'Amend Booking'",
+    hintX: 30,
+    hintY: 42,
+    icon: "✏️"
+  },
+  {
+    id: 7,
+    title: "Reports & Analytics",
+    subtitle: "Post-event performance",
+    role: "Event Organizer",
+    roleIcon: "🗂️",
+    roleColor: "#27AE60",
+    url: "transitflow_reports.html",
+    description: "After the event, the EO reviews full analytics — total revenue, trip completion rates, promo code performance, passenger manifests, and a complete activity audit log.",
+    hintText: "Explore the Financial and Passengers tabs",
+    hintX: 38,
+    hintY: 27,
+    icon: "📊"
+  },
+  {
+    id: 8,
+    title: "Project Settings",
+    subtitle: "Configure & control",
+    role: "Admin",
+    roleIcon: "⚙️",
+    roleColor: "#8B5CF6",
+    url: "transitflow_settings.html",
+    description: "The Admin configures the full platform — promo codes, vehicle types, disclaimer consent gates, QR ticketing, pickup/dropoff locations, and shareable booking links.",
+    hintText: "Click 'Promo Codes' in the left nav to manage discounts",
+    hintX: 18,
+    hintY: 56,
+    icon: "⚙️"
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────
+let currentStep = 0;
+let started = false;
+
+// ── INIT ──────────────────────────────────────────────────────
+function init() {
+  buildSidebar();
+  buildHeaderProgress();
+  buildWelcomeJourney();
+}
+
+function buildSidebar() {
+  const list = document.getElementById('steps-list');
+  list.innerHTML = STEPS.map((s, i) => `
+    <div class="step-item" id="step-item-${i}" onclick="started && goToStep(${i})">
+      <div class="step-number-col">
+        <div class="step-num" id="step-num-${i}">${i < currentStep ? '✓' : s.id}</div>
+        ${i < STEPS.length - 1 ? '<div class="step-connector" id="step-conn-'+i+'"></div>' : ''}
+      </div>
+      <div class="step-info">
+        <div class="step-title">${s.title}</div>
+        <div class="step-subtitle">${s.subtitle}</div>
+        <span class="role-badge" style="background:${s.roleColor}22; color:${s.roleColor}; border: 1px solid ${s.roleColor}44;">
+          ${s.roleIcon} ${s.role}
+        </span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildHeaderProgress() {
+  const hprog = document.getElementById('hprog');
+  hprog.innerHTML = STEPS.map((s, i) => `
+    <div class="hprog-dot" id="hprog-${i}" onclick="started && goToStep(${i})" title="${s.title}"></div>
+  `).join('');
+}
+
+function buildWelcomeJourney() {
+  const wj = document.getElementById('wc-journey');
+  wj.innerHTML = STEPS.map((s, i) => `
+    ${i > 0 ? '<div class="wc-arrow">›</div>' : ''}
+    <div class="wc-step-pill">
+      <div class="wc-step-icon">${s.icon}</div>
+      <div class="wc-step-name">${s.title.split(' ')[0]}<br>${s.title.split(' ').slice(1).join(' ')}</div>
+    </div>
+  `).join('');
+}
+
+// ── DEMO FLOW ─────────────────────────────────────────────────
+function startDemo() {
+  started = true;
+  document.getElementById('welcome-overlay').classList.add('hidden');
+  goToStep(0);
+}
+
+function goToStep(index) {
+  if (index < 0 || index >= STEPS.length) return;
+
+  // Flash transition
+  triggerFlash();
+
+  currentStep = index;
+  const step = STEPS[index];
+
+  // Load iframe
+  const frame = document.getElementById('demo-frame');
+  frame.src = step.url;
+
+  // Update sidebar
+  STEPS.forEach((s, i) => {
+    const item = document.getElementById(`step-item-${i}`);
+    const num  = document.getElementById(`step-num-${i}`);
+    item.classList.remove('active', 'done');
+    num.textContent = i < currentStep ? '✓' : s.id;
+    if (i < currentStep) item.classList.add('done');
+    if (i === currentStep) item.classList.add('active');
+  });
+
+  // Update header dots
+  STEPS.forEach((s, i) => {
+    const dot = document.getElementById(`hprog-${i}`);
+    dot.classList.remove('active', 'done');
+    if (i < currentStep) dot.classList.add('done');
+    if (i === currentStep) dot.classList.add('active');
+  });
+
+  // Update guide bar
+  document.getElementById('guide-step-label').textContent = `Step ${index + 1} of ${STEPS.length}`;
+  document.getElementById('guide-title').textContent = step.title;
+  document.getElementById('guide-desc').textContent = step.description;
+  document.getElementById('guide-hint-text').textContent = step.hintText;
+  document.getElementById('role-avatar').textContent = step.roleIcon;
+  document.getElementById('role-name').textContent = step.role;
+  document.getElementById('role-avatar').style.borderColor = step.roleColor + '66';
+  document.getElementById('role-avatar').style.background = step.roleColor + '22';
+  document.getElementById('step-counter').textContent = `Step ${index + 1} of ${STEPS.length}`;
+
+  // Update nav buttons
+  document.getElementById('btn-prev').disabled = index === 0;
+  const nextBtn = document.getElementById('btn-next');
+  if (index === STEPS.length - 1) {
+    nextBtn.textContent = '✓ Finish';
+    nextBtn.classList.add('restart');
+    nextBtn.classList.remove('next');
+  } else {
+    nextBtn.textContent = 'Next →';
+    nextBtn.classList.add('next');
+    nextBtn.classList.remove('restart');
+  }
+  nextBtn.disabled = false;
+
+  // Show hint after a short delay (let iframe load)
+  setTimeout(() => showHint(step), 800);
+
+  // Scroll sidebar to show current step
+  const activeItem = document.getElementById(`step-item-${index}`);
+  if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showHint(step) {
+  const bubble = document.getElementById('hint-bubble');
+  const label  = document.getElementById('hint-label');
+
+  bubble.style.left  = step.hintX + '%';
+  bubble.style.top   = step.hintY + '%';
+  label.textContent  = step.hintText;
+  bubble.style.display = 'flex';
+}
+
+function hideHint() {
+  document.getElementById('hint-bubble').style.display = 'none';
+}
+
+function nextStep() {
+  if (currentStep === STEPS.length - 1) {
+    showCompletion();
+    return;
+  }
+  goToStep(currentStep + 1);
+}
+
+function prevStep() {
+  if (currentStep > 0) goToStep(currentStep - 1);
+}
+
+function showCompletion() {
+  hideHint();
+  document.getElementById('complete-overlay').classList.add('visible');
+}
+
+function restartDemo() {
+  document.getElementById('complete-overlay').classList.remove('visible');
+  goToStep(0);
+}
+
+function triggerFlash() {
+  const flash = document.getElementById('transition-flash');
+  flash.classList.add('flash');
+  setTimeout(() => flash.classList.remove('flash'), 200);
+}
+
+// Hide hint when user interacts with iframe (they're exploring)
+document.getElementById('demo-frame').addEventListener('load', () => {
+  // Re-show hint 1.2s after page loads
+  setTimeout(() => {
+    if (started) showHint(STEPS[currentStep]);
+  }, 1200);
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (!started) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextStep();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevStep();
+});
+
+// Init
+init();
+</script>
+</body>
+</html>

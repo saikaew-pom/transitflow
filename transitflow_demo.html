@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransitFlow — Product Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy:   #1E3A5F;
+    --teal:   #2E86AB;
+    --green:  #27AE60;
+    --green2: #5be3a6;
+    --amber:  #F39C12;
+    --red:    #E74C3C;
+  }
+  body {
+    background: #0a0a0a;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden; gap: 14px;
+  }
+
+  /* ── Stage 16:9 ─────────────────────────────────────── */
+  #stage {
+    width: 960px; height: 540px;
+    position: relative; overflow: hidden;
+    background: #0a1628; border-radius: 8px;
+    box-shadow: 0 0 90px rgba(46,134,171,.25), 0 0 0 1px rgba(255,255,255,.06);
+  }
+
+  /* ── Progress ───────────────────────────────────────── */
+  #progress-wrap { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,.1); z-index: 100; }
+  #progress-bar  { height: 100%; background: linear-gradient(90deg,var(--green2),var(--teal)); width: 0%; transition: width .08s linear; box-shadow: 0 0 8px rgba(91,227,166,.5); }
+
+  /* ── HUD ────────────────────────────────────────────── */
+  #logo-wm  { position: absolute; top: 14px; left: 16px; font-size: 14px; font-weight: 800; color: rgba(255,255,255,.55); z-index: 100; }
+  #logo-wm span { color: var(--green2); }
+  #timer    { position: absolute; top: 14px; right: 16px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.3); z-index: 100; font-variant-numeric: tabular-nums; }
+  #scene-label { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,.3); z-index: 100; white-space: nowrap; }
+
+  /* ── Dots ───────────────────────────────────────────── */
+  #scene-dots { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; z-index: 100; }
+  .sdot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.2); transition: all .3s; }
+  .sdot.active { background: var(--green2); transform: scale(1.5); box-shadow: 0 0 5px rgba(91,227,166,.5); }
+
+  /* ── Scene base ─────────────────────────────────────── */
+  .scene { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .65s ease; }
+  .scene.active { opacity: 1; pointer-events: auto; }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 1 — PAIN
+  ═══════════════════════════════════════════════════ */
+  #s1 { background: linear-gradient(135deg,#180808,#2a0d0d); flex-direction: column; }
+  .pain-title { font-size: 46px; font-weight: 900; color: #fff; text-align: center; line-height: 1.15; opacity: 0; transform: translateY(28px); transition: opacity .6s, transform .6s; max-width: 700px; }
+  .pain-title em { font-style: normal; color: #ff6b6b; }
+  .pain-title.show { opacity: 1; transform: translateY(0); }
+  .msg-bubble { position: absolute; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 13px; padding: 9px 13px; font-size: 11.5px; color: rgba(255,255,255,.65); max-width: 195px; opacity: 0; backdrop-filter: blur(6px); line-height: 1.4; }
+  .msg-bubble .mb-who { font-size: 9.5px; color: rgba(255,255,255,.35); margin-bottom: 2px; font-weight: 600; }
+  .msg-bubble.pop { animation: popIn .4s ease forwards; }
+  @keyframes popIn { from { opacity:0; transform:scale(.7) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 2 — INTRO
+  ═══════════════════════════════════════════════════ */
+  #s2 { background: linear-gradient(155deg,#0d2340,#1E3A5F,#1a4a6e); }
+  .fade-up { opacity: 0; transform: translateY(22px); transition: opacity .55s, transform .55s; }
+  .fade-up.show { opacity: 1; transform: translateY(0); }
+  .intro-ey  { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--green2); margin-bottom: 16px; }
+  .intro-h   { font-size: 54px; font-weight: 900; color: #fff; line-height: 1.08; margin-bottom: 14px; text-align: center; }
+  .intro-h span { color: var(--green2); }
+  .intro-s   { font-size: 17px; color: rgba(255,255,255,.6); line-height: 1.65; text-align: center; max-width: 480px; }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 3 — DASHBOARD
+  ═══════════════════════════════════════════════════ */
+  #s3 { background: #0f1d30; align-items: center; justify-content: center; flex-direction: column; padding-top: 28px; }
+  .scene-tag { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: 1.3px; margin-bottom: 10px; opacity: 0; transition: opacity .5s; }
+  .scene-tag.show { opacity: 1; }
+  .dash-win { width: 820px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.55); opacity: 0; transform: scale(.94) translateY(18px); transition: opacity .6s, transform .6s; }
+  .dash-win.show { opacity: 1; transform: scale(1) translateY(0); }
+  .dw-bar { background: #f2f2f2; padding: 8px 12px; display: flex; gap: 5px; align-items: center; border-bottom: 1px solid #e5e5e5; }
+  .dw-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dw-url { flex: 1; background: #fff; border-radius: 4px; margin: 0 8px; padding: 3px 10px; font-size: 10px; color: #aaa; border: 1px solid #ddd; }
+  .dw-inner { display: flex; height: 272px; }
+  .dw-sb { width: 130px; background: var(--navy); padding: 14px 8px; flex-shrink: 0; }
+  .dw-sb-logo { font-size: 12px; font-weight: 800; color: #fff; margin-bottom: 14px; padding-left: 4px; }
+  .dw-sb-logo span { color: var(--green2); }
+  .dw-nav { display: flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 5px; font-size: 10.5px; color: rgba(255,255,255,.65); margin-bottom: 1px; border-left: 2px solid transparent; }
+  .dw-nav.a { background: rgba(46,134,171,.2); color: #fff; border-left-color: var(--green2); }
+  .dw-main { flex: 1; padding: 14px; overflow: hidden; background: #f8f9fa; }
+  .dw-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 10px; }
+  .dw-stat { background: #fff; border-radius: 7px; padding: 9px 11px; border-left: 3px solid; opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .4s; }
+  .dw-stat.show { opacity: 1; transform: translateY(0); }
+  .dsv { font-size: 18px; font-weight: 800; }
+  .dsl { font-size: 8.5px; color: #999; text-transform: uppercase; letter-spacing: .4px; margin-top: 1px; }
+  .dw-row { display: flex; align-items: center; gap: 7px; padding: 5px 7px; border-radius: 5px; margin-bottom: 3px; font-size: 9.5px; background: #fff; opacity: 0; transform: translateX(-8px); transition: opacity .4s, transform .4s; }
+  .dw-row.show { opacity: 1; transform: translateX(0); }
+  .dr-ref { font-weight: 700; color: var(--navy); min-width: 78px; }
+  .dr-name { flex: 1; color: #555; }
+  .dr-badge { font-size: 8.5px; font-weight: 700; padding: 2px 7px; border-radius: 9px; }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 4 — BOOKING PORTAL
+  ═══════════════════════════════════════════════════ */
+  #s4 { background: #0f1d30; gap: 40px; }
+  .phone-wrap { position: relative; }
+  .phone { width: 220px; height: 400px; background: #111; border-radius: 28px; border: 5px solid #222; overflow: hidden; box-shadow: 0 28px 70px rgba(0,0,0,.65); opacity: 0; transform: translateY(28px) rotate(-1.5deg); transition: opacity .7s, transform .7s; }
+  .phone.show { opacity: 1; transform: translateY(0) rotate(0); }
+  .ph-head { background: linear-gradient(135deg,var(--navy),var(--teal)); padding: 18px 12px 14px; }
+  .ph-hl { font-size: 8.5px; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .8px; }
+  .ph-ht { font-size: 13px; font-weight: 800; color: #fff; margin-top: 3px; }
+  .ph-steps { display: flex; gap: 3px; margin-top: 8px; }
+  .ph-step { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.2); }
+  .ph-step.d { background: var(--green2); }
+  .ph-step.a { background: rgba(255,255,255,.65); }
+  .ph-body { padding: 12px; background: #fff; height: calc(100% - 80px); }
+  .ph-f { margin-bottom: 8px; }
+  .ph-fl { font-size: 7.5px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+  .ph-fv { font-size: 11px; font-weight: 600; color: var(--navy); padding: 5px 8px; background: #f4f6f8; border-radius: 5px; border: 1px solid #e0e6ed; }
+  .ph-pbox { background: linear-gradient(135deg,var(--navy),var(--teal)); border-radius: 8px; padding: 10px; margin-top: 8px; }
+  .ph-pl { font-size: 7.5px; color: rgba(255,255,255,.55); margin-bottom: 2px; }
+  .ph-pv { font-size: 19px; font-weight: 900; color: #fff; }
+  .ph-pp { font-size: 8px; color: var(--green2); margin-top: 2px; font-weight: 700; }
+  .ph-btn { background: var(--green2); color: var(--navy); font-size: 10.5px; font-weight: 800; border-radius: 6px; padding: 8px; text-align: center; margin-top: 9px; }
+  .feat-list { display: flex; flex-direction: column; gap: 14px; }
+  .feat-item { display: flex; align-items: flex-start; gap: 10px; opacity: 0; transform: translateX(18px); transition: opacity .5s, transform .5s; }
+  .feat-item.show { opacity: 1; transform: translateX(0); }
+  .fi-icon { width: 30px; height: 30px; border-radius: 7px; background: rgba(91,227,166,.15); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .fi-t { font-size: 12px; font-weight: 700; color: #fff; }
+  .fi-s { font-size: 10.5px; color: rgba(255,255,255,.45); margin-top: 1px; }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 5 — TRIPS
+  ═══════════════════════════════════════════════════ */
+  #s5 { background: #0f1d30; flex-direction: column; gap: 12px; padding: 44px 32px 24px; }
+  .tc-row { display: flex; gap: 12px; width: 100%; max-width: 860px; }
+  .tc { flex: 1; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09); border-radius: 12px; padding: 14px; opacity: 0; transform: translateY(18px); transition: opacity .5s, transform .5s; position: relative; overflow: hidden; }
+  .tc::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .tc.g::before { background: var(--green2); }
+  .tc.a::before { background: var(--amber); }
+  .tc.b::before { background: var(--teal); }
+  .tc.show { opacity: 1; transform: translateY(0); }
+  .tc-route { font-size: 12.5px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .tc-meta  { font-size: 10px; color: rgba(255,255,255,.4); margin-bottom: 10px; }
+  .tc-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+  .tcb { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .cap-bar { height: 5px; background: rgba(255,255,255,.1); border-radius: 3px; margin-bottom: 4px; overflow: hidden; }
+  .cap-fill { height: 100%; border-radius: 3px; transition: width 1.2s ease .4s; }
+  .tc-cap-txt { font-size: 9px; color: rgba(255,255,255,.4); }
+  .tc-driver { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.07); }
+  .dr-av { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .dr-n { font-size: 10.5px; font-weight: 700; color: #fff; }
+  .dr-p { font-size: 9px; color: rgba(255,255,255,.4); }
+  .ml-notif { position: absolute; top: 10px; left: 50%; transform: translateX(-50%) translateY(-16px); background: rgba(255,255,255,.95); border-radius: 9px; padding: 9px 14px; box-shadow: 0 8px 28px rgba(0,0,0,.4); display: flex; align-items: center; gap: 9px; font-size: 11px; border-left: 3px solid var(--green2); white-space: nowrap; opacity: 0; transition: opacity .5s, transform .5s; z-index: 10; }
+  .ml-notif.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 6 — QR BOARDING
+  ═══════════════════════════════════════════════════ */
+  #s6 { background: linear-gradient(140deg,#0a1628,#0f2040,#162d4a); }
+  .bp { width: 236px; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 28px 70px rgba(0,0,0,.6); opacity: 0; transform: scale(.86) rotate(-2.5deg); transition: opacity .7s, transform .7s; }
+  .bp.show { opacity: 1; transform: scale(1) rotate(0); }
+  .bp-head { background: linear-gradient(135deg,var(--navy),var(--teal)); padding: 16px 16px 12px; }
+  .bp-ft { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .bp-ap { font-size: 22px; font-weight: 900; color: #fff; }
+  .bp-ar { font-size: 7.5px; color: rgba(255,255,255,.5); margin-top: 2px; }
+  .bp-ref2 { font-size: 10px; font-weight: 700; color: var(--green2); letter-spacing: .8px; }
+  .bp-body2 { padding: 12px 16px; }
+  .bp-r { display: flex; gap: 10px; margin-bottom: 8px; }
+  .bp-f { flex: 1; }
+  .bp-fl { font-size: 7.5px; color: #aaa; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 1px; }
+  .bp-fv2 { font-size: 11.5px; font-weight: 700; color: var(--navy); }
+  .bp-hr { border: none; border-top: 1.5px dashed #ddd; margin: 8px 0; }
+  .qr-grid { display: inline-grid; grid-template-columns: repeat(9,1fr); gap: 2px; width: 88px; height: 88px; padding: 5px; background: #fff; border: 1.5px solid #eee; border-radius: 5px; margin: 0 auto; display: block; }
+  .qr-wrap { text-align: center; padding-bottom: 12px; position: relative; }
+  .scan-line { position: absolute; left: 50%; transform: translateX(-50%); width: 90px; height: 2px; background: linear-gradient(90deg,transparent,var(--green2),transparent); border-radius: 1px; top: 5px; animation: scan 1.4s ease-in-out infinite; box-shadow: 0 0 7px rgba(91,227,166,.7); opacity: 0; transition: opacity .3s; }
+  .scan-line.active { opacity: 1; }
+  @keyframes scan { 0%,100% { top:5px; } 50% { top:87px; } }
+  .bp-scan { font-size: 8px; color: #bbb; text-transform: uppercase; letter-spacing: .5px; margin-top: 6px; }
+  .status-col { display: flex; flex-direction: column; gap: 13px; opacity: 0; transform: translateX(18px); transition: opacity .6s .3s, transform .6s .3s; }
+  .status-col.show { opacity: 1; transform: translateX(0); }
+  .ss { display: flex; align-items: center; gap: 12px; }
+  .ss-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .ss-dot.done    { background: rgba(91,227,166,.2); }
+  .ss-dot.current { background: rgba(46,134,171,.2); animation: pdot 1.5s infinite; }
+  .ss-dot.off     { background: rgba(255,255,255,.05); opacity: .4; }
+  @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(46,134,171,.4);} 50%{box-shadow:0 0 0 8px rgba(46,134,171,0);} }
+  .ss-t { font-size: 12px; font-weight: 700; color: #fff; }
+  .ss-s { font-size: 10px; color: rgba(255,255,255,.4); margin-top: 1px; }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 7 — EMAIL AMENDMENT
+  ═══════════════════════════════════════════════════ */
+  #s7 { background: linear-gradient(145deg,#0f1d30,#162d4a,#0f2a20); }
+  .email-demo { display: flex; gap: 20px; align-items: flex-start; width: 100%; max-width: 880px; padding: 0 20px; }
+
+  /* Email client mock */
+  .email-client { width: 340px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.55); opacity: 0; transform: translateX(-24px); transition: opacity .65s, transform .65s; flex-shrink: 0; }
+  .email-client.show { opacity: 1; transform: translateX(0); }
+  .ec-bar { background: #f2f2f2; padding: 8px 12px; display: flex; gap: 5px; align-items: center; border-bottom: 1px solid #e5e5e5; }
+  .ec-title { font-size: 11px; font-weight: 700; color: #555; margin-left: 6px; }
+  .inbox-item { display: flex; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background .12s; position: relative; }
+  .inbox-item.sel { background: #E8F4FD; border-left: 2px solid var(--teal); }
+  .inbox-item.unread::before { content:''; position:absolute; top:14px; left:4px; width:6px; height:6px; border-radius:50%; background:var(--teal); }
+  .ii-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .ii-b { flex: 1; min-width: 0; }
+  .ii-from { font-size: 10.5px; font-weight: 700; color: #333; margin-bottom: 1px; }
+  .ii-sub { font-size: 10px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 1px; }
+  .ii-prev { font-size: 9px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ii-time { font-size: 9px; color: #bbb; flex-shrink: 0; margin-top: 1px; }
+
+  /* Email content pane */
+  .email-content { flex: 1; display: flex; flex-direction: column; gap: 0; opacity: 0; transform: translateX(18px); transition: opacity .65s .15s, transform .65s .15s; }
+  .email-content.show { opacity: 1; transform: translateX(0); }
+  .ec-header { background: rgba(255,255,255,.08); border-radius: 9px 9px 0 0; padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .ec-subj { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .ec-from { font-size: 10.5px; color: rgba(255,255,255,.45); }
+  .ec-body { background: rgba(255,255,255,.05); border-radius: 0 0 9px 9px; padding: 16px; }
+
+  /* Mini email HTML */
+  .mini-email { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+  .me-head { background: linear-gradient(135deg,var(--navy),var(--teal)); padding: 14px 16px; }
+  .me-logo { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+  .me-logo span { color: var(--green2); }
+  .me-tag { font-size: 8.5px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .8px; }
+  .me-body { padding: 14px 16px; }
+  .me-greeting { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .me-card { background: #f8f9fa; border-radius: 7px; border: 1px solid #e5e5e5; padding: 11px; margin-bottom: 10px; font-size: 10px; }
+  .me-card-ref { font-size: 15px; font-weight: 900; color: var(--navy); margin-bottom: 8px; letter-spacing: .5px; }
+  .me-row { display: flex; gap: 10px; margin-bottom: 5px; }
+  .me-col { flex: 1; }
+  .me-cl { font-size: 7.5px; color: #aaa; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 1px; }
+  .me-cv { font-size: 10px; font-weight: 600; color: var(--navy); }
+  .me-warn { background: #FEF6E4; border-left: 3px solid var(--amber); border-radius: 5px; padding: 7px 10px; font-size: 9.5px; color: #8B5E04; margin-bottom: 10px; }
+  .me-ctas { display: flex; gap: 6px; }
+  .me-cta1 { background: var(--teal); color: #fff; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 7px 12px; border: none; cursor: pointer; font-family: inherit; }
+  .me-cta2 { background: #fff; color: var(--navy); font-size: 10px; font-weight: 700; border-radius: 5px; padding: 7px 12px; border: 1.5px solid var(--navy); cursor: pointer; font-family: inherit; }
+
+  /* Amendment form overlay effect */
+  .amend-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .5s; z-index: 20; border-radius: 10px; }
+  .amend-overlay.show { opacity: 1; }
+  .amend-modal { background: #fff; border-radius: 10px; padding: 16px 18px; width: 290px; box-shadow: 0 16px 50px rgba(0,0,0,.5); transform: scale(.9) translateY(10px); transition: transform .4s; }
+  .amend-overlay.show .amend-modal { transform: scale(1) translateY(0); }
+  .am-title { font-size: 13px; font-weight: 800; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+  .am-badge { font-size: 9px; font-weight: 700; background: #E8F4FD; color: var(--teal); padding: 2px 7px; border-radius: 8px; }
+  .am-field { margin-bottom: 8px; }
+  .am-label { font-size: 8.5px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+  .am-input { border: 1.5px solid #e0e0e0; border-radius: 5px; padding: 5px 9px; font-size: 10.5px; color: var(--navy); width: 100%; font-family: inherit; }
+  .am-input.changed { border-color: var(--amber); background: #FEF6E4; }
+  .am-counters { display: flex; gap: 10px; }
+  .am-counter { flex: 1; }
+  .am-counter-row { display: flex; align-items: center; }
+  .am-cbtn { width: 26px; height: 26px; border: 1px solid #ddd; background: #f5f5f5; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+  .am-cbtn:first-child { border-radius: 4px 0 0 4px; }
+  .am-cbtn:last-child  { border-radius: 0 4px 4px 0; }
+  .am-cval { border: 1px solid #ddd; border-left: none; border-right: none; padding: 0 10px; height: 26px; display: flex; align-items: center; font-size: 12px; font-weight: 700; color: var(--navy); }
+  .am-warn { background: #FEF6E4; border-radius: 4px; padding: 6px 8px; font-size: 9px; color: #8B5E04; margin-bottom: 8px; display: flex; gap: 5px; }
+  .am-price { background: #E8F4FD; border-radius: 5px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 10.5px; }
+  .am-price-label { color: var(--navy); font-weight: 700; }
+  .am-price-val { font-size: 14px; font-weight: 900; color: var(--teal); }
+  .am-actions { display: flex; gap: 7px; }
+  .am-btn-p { background: var(--teal); color: #fff; font-size: 10.5px; font-weight: 700; border-radius: 5px; padding: 7px; flex: 1; border: none; cursor: pointer; font-family: inherit; text-align: center; }
+  .am-btn-o { background: #fff; color: #777; font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 7px 10px; border: 1px solid #ddd; cursor: pointer; font-family: inherit; }
+
+  /* Confirm tick animation */
+  .amend-success { position: absolute; inset: 0; background: rgba(255,255,255,.95); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; opacity: 0; transition: opacity .5s; z-index: 30; border-radius: 10px; }
+  .amend-success.show { opacity: 1; }
+  .amend-success .tick { font-size: 44px; }
+  .amend-success .suc-t { font-size: 14px; font-weight: 800; color: var(--navy); }
+  .amend-success .suc-s { font-size: 11px; color: #888; }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 8 — DAILY REPORT
+  ═══════════════════════════════════════════════════ */
+  #s8 { background: linear-gradient(145deg,#0a1628,#1E3A5F,#162d4a); }
+  .report-demo { display: flex; gap: 24px; align-items: flex-start; padding: 0 20px; width: 100%; max-width: 880px; }
+
+  /* Schedule card */
+  .sched-card { width: 240px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 16px; flex-shrink: 0; opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; backdrop-filter: blur(8px); }
+  .sched-card.show { opacity: 1; transform: translateY(0); }
+  .sc-head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+  .sc-icon-wrap { width: 36px; height: 36px; border-radius: 9px; background: rgba(91,227,166,.15); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .sc-title { font-size: 13px; font-weight: 800; color: #fff; }
+  .sc-sub { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 1px; }
+  .sc-time-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .sc-time-row:last-child { border-bottom: none; }
+  .sc-day { font-size: 11px; color: rgba(255,255,255,.55); }
+  .sc-t { font-size: 11px; font-weight: 700; color: #fff; }
+  .sc-sent { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .sc-sent.ok { background: rgba(91,227,166,.2); color: var(--green2); }
+  .sc-sent.sched { background: rgba(255,255,255,.1); color: rgba(255,255,255,.5); }
+  .sc-pulse { display: flex; align-items: center; gap: 7px; margin-top: 12px; padding: 8px 10px; background: rgba(91,227,166,.1); border-radius: 7px; }
+  .sc-pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green2); animation: pulse-g 1.8s infinite; }
+  @keyframes pulse-g { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .sc-pulse-txt { font-size: 10.5px; color: var(--green2); font-weight: 700; }
+
+  /* Report preview */
+  .report-preview { flex: 1; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.5); opacity: 0; transform: translateX(22px); transition: opacity .65s .15s, transform .65s .15s; }
+  .report-preview.show { opacity: 1; transform: translateX(0); }
+  .rp-bar { background: #f2f2f2; padding: 7px 12px; display: flex; gap: 5px; align-items: center; border-bottom: 1px solid #e5e5e5; }
+  .rp-inner { padding: 0; max-height: 430px; overflow: hidden; }
+  .rp-head { background: linear-gradient(135deg,var(--navy),var(--teal)); padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .rp-title { font-size: 15px; font-weight: 800; color: #fff; }
+  .rp-date { font-size: 10px; color: rgba(255,255,255,.55); margin-top: 2px; }
+  .rp-badge2 { background: rgba(91,227,166,.2); color: var(--green2); font-size: 9.5px; font-weight: 700; padding: 3px 9px; border-radius: 8px; }
+  .rp-body { padding: 14px 18px; }
+  .rp-section { margin-bottom: 14px; }
+  .rp-st { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #aaa; margin-bottom: 8px; }
+  .rp-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 14px; }
+  .rp-kpi { border-radius: 7px; padding: 9px 10px; border-left: 3px solid; }
+  .rp-kv { font-size: 17px; font-weight: 800; }
+  .rp-kl { font-size: 8px; color: #999; text-transform: uppercase; letter-spacing: .4px; margin-top: 1px; }
+  .rp-trips { display: flex; flex-direction: column; gap: 4px; }
+  .rpt-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #f8f9fa; border-radius: 5px; font-size: 9.5px; }
+  .rpt-urgent { border-left: 2px solid var(--amber); }
+  .rpt-ok { border-left: 2px solid var(--green); }
+  .rpt-route { flex: 1; font-weight: 600; color: #333; }
+  .rpt-time { color: #777; min-width: 40px; }
+  .rpt-badge { font-size: 8.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .rp-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .rp-action { font-size: 9.5px; font-weight: 700; padding: 6px 12px; border-radius: 5px; border: none; cursor: pointer; font-family: inherit; }
+
+  /* Email sending animation */
+  .send-anim { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 10px; opacity: 0; transition: opacity .5s; pointer-events: none; }
+  .send-anim.show { opacity: 1; }
+  .send-envelope { font-size: 52px; animation: sendFly 1.2s ease forwards; }
+  @keyframes sendFly { 0%{transform:translateY(0) scale(1);opacity:1;} 100%{transform:translateY(-40px) scale(.7);opacity:0;} }
+  .send-label { font-size: 14px; font-weight: 800; color: var(--green2); opacity: 0; animation: fadeIn .5s ease .8s forwards; }
+  @keyframes fadeIn { to { opacity:1; } }
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 9 — CTA
+  ═══════════════════════════════════════════════════ */
+  #s9 { background: linear-gradient(160deg,var(--teal),#1a5c7a,var(--navy)); flex-direction: column; text-align: center; }
+  .cta-ey { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--green2); margin-bottom: 14px; }
+  .cta-h { font-size: 48px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 12px; }
+  .cta-h em { font-style: normal; color: var(--green2); }
+  .cta-s { font-size: 17px; color: rgba(255,255,255,.65); margin-bottom: 30px; max-width: 440px; }
+  .cta-btns { display: flex; gap: 12px; justify-content: center; }
+  .cta-b1 { background: var(--green2); color: var(--navy); padding: 15px 34px; border-radius: 9px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; font-family: inherit; animation: ctaP 2s ease-in-out infinite; box-shadow: 0 8px 26px rgba(91,227,166,.35); }
+  @keyframes ctaP { 0%,100%{box-shadow:0 8px 26px rgba(91,227,166,.35);} 50%{box-shadow:0 12px 38px rgba(91,227,166,.55);transform:translateY(-2px);} }
+  .cta-b2 { background: rgba(255,255,255,.1); color: rgba(255,255,255,.9); padding: 15px 26px; border-radius: 9px; font-size: 15px; font-weight: 600; border: 1.5px solid rgba(255,255,255,.2); cursor: pointer; font-family: inherit; }
+  .cta-note { font-size: 11.5px; color: rgba(255,255,255,.35); margin-top: 16px; }
+
+  /* ── Replay overlay ──────────────────────────────── */
+  #replay-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.82); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 14px; z-index: 90; backdrop-filter: blur(5px); }
+  #replay-overlay.show { display: flex; }
+  .replay-btn { background: var(--green2); color: var(--navy); padding: 14px 36px; border-radius: 10px; font-size: 17px; font-weight: 800; border: none; cursor: pointer; font-family: inherit; transition: all .2s; }
+  .replay-btn:hover { background: #47d494; transform: translateY(-2px); }
+  .replay-sub { font-size: 12px; color: rgba(255,255,255,.35); }
+
+  /* ── Controls ────────────────────────────────────── */
+  #controls { display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,.07); border-radius: 28px; padding: 7px 14px; border: 1px solid rgba(255,255,255,.08); }
+  .ctrl-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.1); border: none; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+  .ctrl-btn:hover { background: rgba(255,255,255,.2); }
+  #play-pause { background: var(--green2); color: var(--navy); }
+  #play-pause:hover { background: #47d494; }
+  .ctrl-time { font-size: 12px; color: rgba(255,255,255,.5); font-variant-numeric: tabular-nums; min-width: 54px; text-align: center; }
+  .ctrl-sep { color: rgba(255,255,255,.2); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="logo-wm">Transit<span>Flow</span></div>
+  <div id="timer">0:42</div>
+  <div id="scene-label"></div>
+  <div id="progress-wrap"><div id="progress-bar"></div></div>
+  <div id="scene-dots">
+    <div class="sdot" id="dot-0"></div><div class="sdot" id="dot-1"></div>
+    <div class="sdot" id="dot-2"></div><div class="sdot" id="dot-3"></div>
+    <div class="sdot" id="dot-4"></div><div class="sdot" id="dot-5"></div>
+    <div class="sdot" id="dot-6"></div><div class="sdot" id="dot-7"></div>
+    <div class="sdot" id="dot-8"></div>
+  </div>
+
+  <!-- S1: Pain -->
+  <div class="scene" id="s1">
+    <div id="chaos-msgs" style="position:absolute;inset:0;pointer-events:none;"></div>
+    <div class="pain-title" id="pain-title">Managing event transport<br>is <em>complete chaos.</em></div>
+  </div>
+
+  <!-- S2: Intro -->
+  <div class="scene" id="s2">
+    <div style="text-align:center;">
+      <div class="fade-up intro-ey" id="i-ey">Introducing TransitFlow</div>
+      <div class="fade-up intro-h" id="i-h" style="transition-delay:.15s;">Zero chaos.<br><span>Total control.</span></div>
+      <div class="fade-up intro-s" id="i-s" style="transition-delay:.3s;">One platform. From passenger booking to driver dispatch — fully automated.</div>
+    </div>
+  </div>
+
+  <!-- S3: Dashboard -->
+  <div class="scene" id="s3">
+    <div class="scene-tag" id="s3t">📋 Booking Management Dashboard</div>
+    <div class="dash-win" id="dash-win">
+      <div class="dw-bar">
+        <div class="dw-dot" style="background:#ff5f57;"></div>
+        <div class="dw-dot" style="background:#febc2e;"></div>
+        <div class="dw-dot" style="background:#28c840;"></div>
+        <div class="dw-url">app.transitflow.io/apec-summit-2026/bookings</div>
+      </div>
+      <div class="dw-inner">
+        <div class="dw-sb">
+          <div class="dw-sb-logo">Transit<span>Flow</span></div>
+          <div class="dw-nav a">📋 Bookings</div>
+          <div class="dw-nav">🚌 Trips</div>
+          <div class="dw-nav">👥 Passengers</div>
+          <div class="dw-nav">📊 Reports</div>
+          <div class="dw-nav">⚙️ Settings</div>
+        </div>
+        <div class="dw-main">
+          <div class="dw-stats">
+            <div class="dw-stat" id="ds1" style="border-left-color:#2E86AB;"><div class="dsv" style="color:#2E86AB;">284</div><div class="dsl">Bookings</div></div>
+            <div class="dw-stat" id="ds2" style="border-left-color:#27AE60;"><div class="dsv" style="color:#27AE60;">241</div><div class="dsl">Confirmed</div></div>
+            <div class="dw-stat" id="ds3" style="border-left-color:#F39C12;"><div class="dsv" style="color:#F39C12;">28</div><div class="dsl">Pending</div></div>
+            <div class="dw-stat" id="ds4" style="border-left-color:#1E3A5F;"><div class="dsv" style="color:#1E3A5F;font-size:13px;">฿487K</div><div class="dsl">Revenue</div></div>
+          </div>
+          <div class="dw-row" id="dr1"><span class="dr-ref">TF-2026-0041</span><span class="dr-name">James Whitfield · BKK→Centara · 13 Apr</span><span class="dr-badge" style="background:#e8f8ef;color:#27AE60;">✓ Paid</span></div>
+          <div class="dw-row" id="dr2"><span class="dr-ref">TF-2026-0042</span><span class="dr-name">Amara Osei · Peninsula→BKK · 18 Apr</span><span class="dr-badge" style="background:#e8f4fd;color:#2E86AB;">Confirmed</span></div>
+          <div class="dw-row" id="dr3"><span class="dr-ref">TF-2026-0043</span><span class="dr-name">Li Mei Zhang · BKK→Centara · 13 Apr</span><span class="dr-badge" style="background:#fef6e4;color:#F39C12;">Pending</span></div>
+          <div class="dw-row" id="dr4"><span class="dr-ref">TF-2026-0044</span><span class="dr-name">Pedro Alvarez · Shangri-La→BKK · 17 Apr</span><span class="dr-badge" style="background:#e8f8ef;color:#27AE60;">✓ Paid</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4: Booking Portal -->
+  <div class="scene" id="s4">
+    <div class="phone-wrap">
+      <div class="phone" id="phone">
+        <div class="ph-head">
+          <div class="ph-hl">APEC Summit 2026 · Booking Portal</div>
+          <div class="ph-ht">Book Your Transfer</div>
+          <div class="ph-steps"><div class="ph-step d"></div><div class="ph-step d"></div><div class="ph-step a"></div><div class="ph-step"></div></div>
+        </div>
+        <div class="ph-body">
+          <div class="ph-f"><div class="ph-fl">Direction</div><div class="ph-fv">✈️ Airport → Hotel</div></div>
+          <div class="ph-f"><div class="ph-fl">Airport</div><div class="ph-fv">BKK — Suvarnabhumi</div></div>
+          <div class="ph-f"><div class="ph-fl">Hotel</div><div class="ph-fv">Centara Grand</div></div>
+          <div class="ph-f"><div class="ph-fl">Promo Code</div><div class="ph-fv" style="color:#27AE60;">VIP15 ✓ –15% applied</div></div>
+          <div class="ph-pbox"><div class="ph-pl">Total to Pay</div><div class="ph-pv">฿ 2,380</div><div class="ph-pp">You save ฿ 420 with VIP15</div></div>
+          <div class="ph-btn">Pay with Stripe →</div>
+        </div>
+      </div>
+    </div>
+    <div class="feat-list">
+      <div class="feat-item" id="fi1"><div class="fi-icon">🔗</div><div><div class="fi-t">No login needed</div><div class="fi-s">Guests book with just a link</div></div></div>
+      <div class="feat-item" id="fi2"><div class="fi-icon">🎟️</div><div><div class="fi-t">Promo codes</div><div class="fi-s">Live validation, instant discount</div></div></div>
+      <div class="feat-item" id="fi3"><div class="fi-icon">💳</div><div><div class="fi-t">Stripe, Cash or Company</div><div class="fi-s">All payment methods accepted</div></div></div>
+    </div>
+  </div>
+
+  <!-- S5: Trips -->
+  <div class="scene" id="s5">
+    <div class="ml-notif" id="ml-notif"><span style="font-size:18px;">🔗</span><div><div style="font-size:11px;font-weight:700;color:var(--navy);">Magic link sent to Somchai P.</div><div style="font-size:9.5px;color:#888;">Driver sees full manifest — no app required</div></div></div>
+    <div class="scene-tag" id="s5t" style="margin-bottom:6px;">🚌 Auto-Grouped Trips · Driver Assignment</div>
+    <div class="tc-row">
+      <div class="tc g" id="tc1">
+        <div class="tc-route">🚌 BKK → Centara Grand</div>
+        <div class="tc-meta">13 Apr · 08:00 · TG401</div>
+        <div class="tc-badges"><span class="tcb" style="background:rgba(30,58,95,.3);color:#7ecef5;">Coach</span><span class="tcb" style="background:rgba(91,227,166,.15);color:#5be3a6;">✓ Assigned</span></div>
+        <div class="cap-bar"><div class="cap-fill" id="cap1" style="width:0%;background:#2E86AB;"></div></div>
+        <div class="tc-cap-txt">38 / 45 pax</div>
+        <div class="tc-driver"><div class="dr-av" style="background:var(--teal);">SP</div><div><div class="dr-n">Somchai P.</div><div class="dr-p">TH-44-8123</div></div></div>
+      </div>
+      <div class="tc a" id="tc2">
+        <div class="tc-route">🚐 DMK → Novotel</div>
+        <div class="tc-meta">13 Apr · 10:30 · QR830</div>
+        <div class="tc-badges"><span class="tcb" style="background:rgba(30,58,95,.3);color:#7ecef5;">Van</span><span class="tcb" style="background:rgba(243,156,18,.2);color:#f9c74f;">⚠ Needs Driver</span></div>
+        <div class="cap-bar"><div class="cap-fill" id="cap2" style="width:0%;background:#F39C12;"></div></div>
+        <div class="tc-cap-txt">6 / 7 pax</div>
+        <div class="tc-driver" style="opacity:.4;"><div class="dr-av" style="background:#555;">?</div><div><div class="dr-n">Unassigned</div><div class="dr-p">Assign driver →</div></div></div>
+      </div>
+      <div class="tc b" id="tc3">
+        <div class="tc-route">🚗 Peninsula → BKK</div>
+        <div class="tc-meta">18 Apr · 11:00 · Departure</div>
+        <div class="tc-badges"><span class="tcb" style="background:rgba(30,58,95,.3);color:#7ecef5;">Sedan</span><span class="tcb" style="background:rgba(46,134,171,.2);color:#7ecef5;">In Progress</span></div>
+        <div class="cap-bar"><div class="cap-fill" id="cap3" style="width:0%;background:#5be3a6;"></div></div>
+        <div class="tc-cap-txt">3 / 4 pax</div>
+        <div class="tc-driver"><div class="dr-av" style="background:#27AE60;">PW</div><div><div class="dr-n">Preecha W.</div><div class="dr-p">BKK-55-1290</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S6: QR Boarding -->
+  <div class="scene" id="s6">
+    <div style="display:flex;align-items:center;gap:52px;">
+      <div class="bp" id="bp">
+        <div class="bp-head">
+          <div class="bp-ft"><div><div class="bp-ap">BKK</div><div class="bp-ar">Suvarnabhumi</div></div><div style="font-size:16px;color:rgba(255,255,255,.5);margin-top:8px;">→</div><div style="text-align:right;"><div class="bp-ap">CTW</div><div class="bp-ar">Centara Grand</div></div></div>
+          <div class="bp-ref2">TF-2026-0041</div>
+        </div>
+        <div class="bp-body2">
+          <div class="bp-r"><div class="bp-f"><div class="bp-fl">Passenger</div><div class="bp-fv2">James Whitfield</div></div><div class="bp-f"><div class="bp-fl">Date</div><div class="bp-fv2">13 Apr 2026</div></div></div>
+          <div class="bp-r"><div class="bp-f"><div class="bp-fl">Vehicle</div><div class="bp-fv2">Coach</div></div><div class="bp-f"><div class="bp-fl">Departs</div><div class="bp-fv2">08:30</div></div></div>
+          <div class="bp-hr">
+          <div class="qr-wrap">
+            <div id="qr-grid" style="display:inline-grid;grid-template-columns:repeat(9,1fr);gap:2px;width:88px;height:88px;padding:5px;background:#fff;border:1.5px solid #eee;border-radius:5px;"></div>
+            <div class="scan-line" id="scan-line"></div>
+            <div class="bp-scan">Show to driver at boarding</div>
+          </div>
+        </div>
+        </div>
+      </div>
+      <div class="status-col" id="sc">
+        <div class="ss"><div class="ss-dot done">✅</div><div><div class="ss-t">Driver en route</div><div class="ss-s">Somchai P. · ETA 4 min</div></div><span style="margin-left:auto;color:var(--green2);">✓</span></div>
+        <div class="ss"><div class="ss-dot done">🚌</div><div><div class="ss-t">Vehicle arrived</div><div class="ss-s">Column 14, Gate B</div></div><span style="margin-left:auto;color:var(--green2);">✓</span></div>
+        <div class="ss"><div class="ss-dot current" id="b-dot">🔲</div><div><div class="ss-t" id="b-title">Boarding — QR Scan</div><div class="ss-s" id="b-sub">Scan your boarding pass</div></div></div>
+        <div class="ss" id="s4-complete" style="opacity:.3;"><div class="ss-dot off">🏨</div><div><div class="ss-t">Trip completed</div><div class="ss-s">Hotel drop-off</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S7: Email Amendment -->
+  <div class="scene" id="s7">
+    <div class="scene-tag" id="s7t" style="position:absolute;top:28px;left:50%;transform:translateX(-50%);">✏️ Guest Opens Email · Amends Booking via Magic Link</div>
+    <div class="email-demo" style="position:relative;margin-top:16px;">
+
+      <!-- Inbox panel -->
+      <div class="email-client" id="email-client">
+        <div class="ec-bar">
+          <div class="dw-dot" style="background:#ff5f57;"></div>
+          <div class="dw-dot" style="background:#febc2e;"></div>
+          <div class="dw-dot" style="background:#28c840;"></div>
+          <span class="ec-title">📬 james.whitfield@summit.org</span>
+        </div>
+        <!-- Confirmation email row (highlighted) -->
+        <div class="inbox-item unread sel" id="inbox-conf">
+          <div class="ii-av" style="background:#2E86AB;">TF</div>
+          <div class="ii-b">
+            <div class="ii-from">TransitFlow · APEC Summit</div>
+            <div class="ii-sub">✅ Booking Confirmed — TF-2026-0041</div>
+            <div class="ii-prev">Your transfer is confirmed. View & amend your booking…</div>
+          </div>
+          <div class="ii-time">09:41</div>
+        </div>
+        <!-- Reminder email row -->
+        <div class="inbox-item" id="inbox-remind">
+          <div class="ii-av" style="background:#27AE60;">TF</div>
+          <div class="ii-b">
+            <div class="ii-from">TransitFlow · APEC Summit</div>
+            <div class="ii-sub">⏰ Your transfer is in 48 hours</div>
+            <div class="ii-prev">Somchai P. · Column 14 · 08:30…</div>
+          </div>
+          <div class="ii-time">Yesterday</div>
+        </div>
+        <!-- Amendment confirmed row (appears after submit) -->
+        <div class="inbox-item" id="inbox-amended" style="opacity:0;transition:opacity .5s;">
+          <div class="ii-av" style="background:#F39C12;">TF</div>
+          <div class="ii-b">
+            <div class="ii-from">TransitFlow · APEC Summit</div>
+            <div class="ii-sub">✏️ Amendment Confirmed — TF-2026-0041</div>
+            <div class="ii-prev">3 passengers · TG405 · New total ฿3,570…</div>
+          </div>
+          <div class="ii-time" id="amend-time">Just now</div>
+        </div>
+      </div>
+
+      <!-- Email content + amendment form -->
+      <div style="flex:1;position:relative;min-height:380px;">
+
+        <!-- Email content shown first -->
+        <div class="email-content" id="email-content">
+          <div class="ec-header">
+            <div class="ec-subj" id="ec-subj-txt">✅ Booking Confirmed — TF-2026-0041</div>
+            <div class="ec-from">From: noreply@transitflow.io · To: james.whitfield@summit.org</div>
+          </div>
+          <div class="ec-body">
+            <div class="mini-email">
+              <div class="me-head">
+                <div class="me-logo">Transit<span>Flow</span></div>
+                <div class="me-tag">APEC Summit 2026 · Official Transport</div>
+              </div>
+              <div class="me-body">
+                <div class="me-greeting">Hi James, your booking is confirmed! 🎉</div>
+                <div class="me-card">
+                  <div class="me-card-ref">TF-2026-0041</div>
+                  <div class="me-row">
+                    <div class="me-col"><div class="me-cl">Direction</div><div class="me-cv">✈️ BKK → Centara</div></div>
+                    <div class="me-col"><div class="me-cl">Date</div><div class="me-cv">13 Apr 2026</div></div>
+                  </div>
+                  <div class="me-row">
+                    <div class="me-col"><div class="me-cl">Passengers</div><div class="me-cv">2 adults</div></div>
+                    <div class="me-col"><div class="me-cl">Flight</div><div class="me-cv">TG 401</div></div>
+                  </div>
+                  <div class="me-row">
+                    <div class="me-col"><div class="me-cl">Total Paid</div><div class="me-cv" style="color:#27AE60;font-size:12px;">฿ 2,380</div></div>
+                    <div class="me-col"><div class="me-cl">Promo</div><div class="me-cv" style="color:#27AE60;">VIP15 –15%</div></div>
+                  </div>
+                </div>
+                <div class="me-warn">⏰ Amendment deadline: <strong>12 Apr 2026 08:15</strong>. Edit passengers, luggage, or flight before cutoff.</div>
+                <div class="me-ctas">
+                  <button class="me-cta1" id="view-pass-btn">View Boarding Pass</button>
+                  <button class="me-cta2" id="amend-btn" onclick="startAmendFlow()">✏️ Amend Booking</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Amendment form (overlaid) -->
+        <div class="amend-overlay" id="amend-overlay">
+          <div class="amend-modal" id="amend-modal">
+            <div class="am-title">✏️ Amend Booking <span class="am-badge">Magic Link ✓</span></div>
+            <div class="am-field"><div class="am-label">Flight Number</div><input class="am-input changed" value="TG 405" readonly></div>
+            <div class="am-counters">
+              <div class="am-counter"><div class="am-label">Passengers</div><div class="am-counter-row"><button class="am-cbtn">−</button><div class="am-cval" id="a-pax">3</div><button class="am-cbtn">+</button></div></div>
+              <div class="am-counter"><div class="am-label">Luggage</div><div class="am-counter-row"><button class="am-cbtn">−</button><div class="am-cval" id="a-bags">3</div><button class="am-cbtn">+</button></div></div>
+            </div>
+            <div class="am-warn" style="margin-top:8px;">⚠️ Vehicle will be reallocated to accommodate 3 passengers</div>
+            <div class="am-price"><span class="am-price-label">New Total</span><span class="am-price-val">฿ 3,570</span></div>
+            <div class="am-actions">
+              <button class="am-btn-p" id="confirm-amend-btn">✓ Confirm Amendment</button>
+              <button class="am-btn-o">Cancel</button>
+            </div>
+          </div>
+          <div class="amend-success" id="amend-success">
+            <div class="tick">✅</div>
+            <div class="suc-t">Booking amended!</div>
+            <div class="suc-s">Confirmation email sent to James</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- S8: Daily Report -->
+  <div class="scene" id="s8">
+    <div class="scene-tag" id="s8t" style="position:absolute;top:28px;left:50%;transform:translateX(-50%);">📧 Automated Daily Report — Sent Every Morning at 07:00</div>
+    <div class="send-anim" id="send-anim"><div class="send-envelope">📧</div><div class="send-label">Report sent!</div></div>
+    <div class="report-demo" style="margin-top:14px;">
+
+      <!-- Schedule card -->
+      <div class="sched-card" id="sched-card">
+        <div class="sc-head">
+          <div class="sc-icon-wrap">📅</div>
+          <div><div class="sc-title">Daily Report</div><div class="sc-sub">Auto-sent every morning</div></div>
+        </div>
+        <div class="sc-time-row"><span class="sc-day">Mon 13 Apr</span><span class="sc-t">07:00</span><span class="sc-sent ok">✓ Sent</span></div>
+        <div class="sc-time-row"><span class="sc-day">Tue 14 Apr</span><span class="sc-t">07:00</span><span class="sc-sent ok">✓ Sent</span></div>
+        <div class="sc-time-row"><span class="sc-day">Wed 15 Apr</span><span class="sc-t">07:00</span><span class="sc-sent ok">✓ Sent</span></div>
+        <div class="sc-time-row"><span class="sc-day">Thu 16 Apr</span><span class="sc-t">07:00</span><span class="sc-sent sched" id="today-row">⏳ Today</span></div>
+        <div class="sc-pulse"><div class="sc-pulse-dot"></div><div class="sc-pulse-txt">Sending now…</div></div>
+      </div>
+
+      <!-- Report preview -->
+      <div class="report-preview" id="report-preview">
+        <div class="rp-bar">
+          <div class="dw-dot" style="background:#ff5f57;"></div>
+          <div class="dw-dot" style="background:#febc2e;"></div>
+          <div class="dw-dot" style="background:#28c840;"></div>
+          <div class="dw-url" style="font-size:10px;">📧 TransitFlow Daily Report — 16 Apr 2026 · To: niran@event.io</div>
+        </div>
+        <div class="rp-inner">
+          <div class="rp-head">
+            <div><div class="rp-title">📊 Daily Operations Report</div><div class="rp-date">Good morning, Niran! · 16 Apr 2026 · 07:00 Bangkok time</div></div>
+            <div class="rp-badge2">APEC Summit 2026</div>
+          </div>
+          <div class="rp-body">
+            <div class="rp-kpis">
+              <div class="rp-kpi" style="background:#e8f8ef;border-left-color:#27AE60;"><div class="rp-kv" style="color:#27AE60;">+18</div><div class="rp-kl">New Bookings Yesterday</div></div>
+              <div class="rp-kpi" style="background:#e8f4fd;border-left-color:#2E86AB;"><div class="rp-kv" style="color:#2E86AB;">฿28.4K</div><div class="rp-kl">Revenue Collected</div></div>
+              <div class="rp-kpi" style="background:#fef6e4;border-left-color:#F39C12;"><div class="rp-kv" style="color:#F39C12;">5</div><div class="rp-kl">Unassigned Trips</div></div>
+              <div class="rp-kpi" style="background:#fdecea;border-left-color:#E74C3C;"><div class="rp-kv" style="color:#E74C3C;">฿12.1K</div><div class="rp-kl">Outstanding Payments</div></div>
+            </div>
+            <div class="rp-section">
+              <div class="rp-st">⚠ Today's Trips Needing Attention</div>
+              <div class="rp-trips">
+                <div class="rpt-row rpt-urgent"><span style="font-size:12px;">⚠️</span><span class="rpt-route">DMK → Novotel</span><span class="rpt-time">10:30</span><span class="rpt-badge" style="background:#fef6e4;color:#F39C12;">No Driver</span></div>
+                <div class="rpt-row rpt-urgent"><span style="font-size:12px;">⚠️</span><span class="rpt-route">BKK → Shangri-La</span><span class="rpt-time">14:00</span><span class="rpt-badge" style="background:#fdecea;color:#E74C3C;">97% Full</span></div>
+                <div class="rpt-row rpt-ok"><span style="font-size:12px;">✅</span><span class="rpt-route">BKK → Centara Grand</span><span class="rpt-time">08:00</span><span class="rpt-badge" style="background:#e8f8ef;color:#27AE60;">Ready</span></div>
+                <div class="rpt-row rpt-ok"><span style="font-size:12px;">✅</span><span class="rpt-route">Peninsula → BKK</span><span class="rpt-time">11:00</span><span class="rpt-badge" style="background:#e8f8ef;color:#27AE60;">Ready</span></div>
+              </div>
+            </div>
+            <div class="rp-actions">
+              <button class="rp-action" style="background:#1E3A5F;color:#fff;">Open Dashboard →</button>
+              <button class="rp-action" style="background:#e8f4fd;color:#2E86AB;">Assign Missing Drivers</button>
+              <button class="rp-action" style="background:#f1f3f5;color:#555;">Download PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- S9: CTA -->
+  <div class="scene" id="s9">
+    <div class="fade-up cta-ey" id="c-ey">Start free today</div>
+    <div class="fade-up cta-h" id="c-h" style="transition-delay:.14s;">Your event runs itself.<br><em>Zero chaos.</em></div>
+    <div class="fade-up cta-s" id="c-s" style="transition-delay:.28s;">Bookings, drivers, passenger amendments, and daily reports — all automated.</div>
+    <div class="fade-up cta-btns" id="c-btns" style="transition-delay:.42s;"><button class="cta-b1">Get started free →</button><button class="cta-b2">See a live demo</button></div>
+    <div class="fade-up cta-note" id="c-note" style="transition-delay:.56s;">transitflow.io · 14-day free trial · No credit card required</div>
+  </div>
+
+  <div id="replay-overlay">
+    <button class="replay-btn" onclick="restartDemo()">▶ Watch Again</button>
+    <div class="replay-sub">transitflow.io — Full Product Demo</div>
+  </div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" onclick="prevScene()">⏮</button>
+  <button class="ctrl-btn" id="play-pause" onclick="togglePlay()">⏸</button>
+  <button class="ctrl-btn" onclick="nextScene()">⏭</button>
+  <span class="ctrl-time" id="ctrl-time">0:00</span>
+  <span class="ctrl-sep">/ 0:42</span>
+</div>
+
+<script>
+// ── QR Grid ─────────────────────────────────────────────
+(function buildQR() {
+  const g = document.getElementById('qr-grid');
+  const p = [1,1,1,1,1,1,1,0,1, 1,0,0,0,0,0,1,0,0, 1,0,1,1,1,0,1,0,1, 1,0,1,1,1,0,1,1,1, 1,0,1,1,1,0,1,0,0, 1,0,0,0,0,0,1,0,1, 1,1,1,1,1,1,1,1,0, 0,0,1,0,0,1,0,0,1, 1,1,0,1,0,1,1,0,1];
+  const x = [0,1,1,0,1,0,0,1,0, 1,0,0,1,1,0,1,0,1, 0,1,1,0,0,1,0,1,0, 1,0,1,1,0,0,1,0,1, 0,1,0,0,1,0,1,1,0, 0,0,1,0,0,1,0,0,1, 1,1,1,0,1,0,1,0,0, 0,1,0,1,0,1,0,1,0, 1,0,1,0,1,0,1,0,1];
+  for(let i=0;i<81;i++){const d=document.createElement('div');d.style.cssText=`border-radius:1px;background:${(i<p.length?p:x)[i%p.length]?'#1E3A5F':'#fff'}`;g.appendChild(d);}
+})();
+
+// ── Scene config ─────────────────────────────────────────
+const TOTAL = 42000;
+const IDS    = ['s1','s2','s3','s4','s5','s6','s7','s8','s9'];
+const LABELS = [
+  'Scene 1/9 — The Problem',
+  'Scene 2/9 — Introducing TransitFlow',
+  'Scene 3/9 — Booking Dashboard',
+  'Scene 4/9 — Passenger Booking Portal',
+  'Scene 5/9 — Trip & Driver Management',
+  'Scene 6/9 — QR Boarding Pass',
+  'Scene 7/9 — Guest Email Amendment',
+  'Scene 8/9 — Automated Daily Report',
+  'Scene 9/9 — Start Free Today',
+];
+// Scene start times (ms)
+const TIMES = [0, 4000, 8000, 13000, 18000, 23000, 28000, 35000, 39500];
+
+let elapsed = 0, playing = true, lastTs = null, curScene = -1, rafId = null;
+
+// ── Scene activators ─────────────────────────────────────
+function activate(i) {
+  switch(i) {
+    case 0: activateS1(); break;
+    case 1: activateS2(); break;
+    case 2: activateS3(); break;
+    case 3: activateS4(); break;
+    case 4: activateS5(); break;
+    case 5: activateS6(); break;
+    case 6: activateS7(); break;
+    case 7: activateS8(); break;
+    case 8: activateS9(); break;
+  }
+}
+function deactivate(i) {
+  switch(i) {
+    case 0: deactivateS1(); break;
+    case 1: deactivateS2(); break;
+    case 2: deactivateS3(); break;
+    case 3: deactivateS4(); break;
+    case 4: deactivateS5(); break;
+    case 5: deactivateS6(); break;
+    case 6: deactivateS7(); break;
+    case 7: deactivateS8(); break;
+    case 8: deactivateS9(); break;
+  }
+}
+
+// S1 Pain
+const CHAOS = [
+  {t:'18%',l:'8%',  d:150,  txt:'🚌 Driver: "Where do I park?"', w:'WhatsApp — Driver Group'},
+  {t:'55%',l:'5%',  d:550,  txt:'🙋 "Where\'s my pickup?? I landed 30 min ago!"', w:'Passenger SMS'},
+  {t:'28%',r:'8%',  d:850,  txt:'📋 Excel row 247 is broken again 😭', w:'Team Chat'},
+  {t:'65%',r:'6%',  d:1150, txt:'🤦 I deleted the manifest tab by accident', w:'Coordinator'},
+  {t:'72%',l:'25%', d:1450, txt:'⏰ 3:14 AM — "What time is my transfer?"', w:'Passenger WhatsApp'},
+  {t:'20%',l:'38%', d:1750, txt:'💸 Who paid by cash? Nobody wrote it down', w:'Finance'},
+];
+function activateS1() {
+  const c = document.getElementById('chaos-msgs'); c.innerHTML = '';
+  CHAOS.forEach(d => setTimeout(() => {
+    if (curScene !== 0) return;
+    const el = document.createElement('div'); el.className = 'msg-bubble';
+    el.style.top = d.t||'auto'; el.style.left = d.l||'auto';
+    if (d.r) el.style.right = d.r;
+    el.innerHTML = `<div class="mb-who">${d.w}</div>${d.txt}`;
+    c.appendChild(el); requestAnimationFrame(() => el.classList.add('pop'));
+  }, d.d));
+  setTimeout(() => { if(curScene===0) document.getElementById('pain-title').classList.add('show'); }, 250);
+}
+function deactivateS1() {
+  document.getElementById('chaos-msgs').innerHTML = '';
+  document.getElementById('pain-title').classList.remove('show');
+}
+
+// S2 Intro
+function activateS2() {
+  ['i-ey','i-h','i-s'].forEach((id,i) => setTimeout(() => document.getElementById(id)?.classList.add('show'), i*140+80));
+}
+function deactivateS2() { ['i-ey','i-h','i-s'].forEach(id => document.getElementById(id)?.classList.remove('show')); }
+
+// S3 Dashboard
+function activateS3() {
+  setTimeout(()=>document.getElementById('s3t').classList.add('show'), 100);
+  setTimeout(()=>document.getElementById('dash-win').classList.add('show'), 200);
+  ['ds1','ds2','ds3','ds4'].forEach((id,i)=>setTimeout(()=>document.getElementById(id)?.classList.add('show'), 650+i*140));
+  ['dr1','dr2','dr3','dr4'].forEach((id,i)=>setTimeout(()=>document.getElementById(id)?.classList.add('show'), 1350+i*180));
+}
+function deactivateS3() {
+  document.getElementById('s3t').classList.remove('show');
+  document.getElementById('dash-win').classList.remove('show');
+  ['ds1','ds2','ds3','ds4','dr1','dr2','dr3','dr4'].forEach(id=>document.getElementById(id)?.classList.remove('show'));
+}
+
+// S4 Portal
+function activateS4() {
+  setTimeout(()=>document.getElementById('phone').classList.add('show'), 100);
+  ['fi1','fi2','fi3'].forEach((id,i)=>setTimeout(()=>document.getElementById(id)?.classList.add('show'), 380+i*230));
+}
+function deactivateS4() {
+  document.getElementById('phone').classList.remove('show');
+  ['fi1','fi2','fi3'].forEach(id=>document.getElementById(id)?.classList.remove('show'));
+}
+
+// S5 Trips
+function activateS5() {
+  setTimeout(()=>document.getElementById('s5t').classList.add('show'), 80);
+  ['tc1','tc2','tc3'].forEach((id,i)=>setTimeout(()=>document.getElementById(id)?.classList.add('show'), 280+i*180));
+  setTimeout(()=>{ document.getElementById('cap1').style.width='84%'; }, 700);
+  setTimeout(()=>{ document.getElementById('cap2').style.width='86%'; }, 880);
+  setTimeout(()=>{ document.getElementById('cap3').style.width='75%'; }, 1060);
+  setTimeout(()=>document.getElementById('ml-notif').classList.add('show'), 2200);
+}
+function deactivateS5() {
+  document.getElementById('s5t').classList.remove('show');
+  ['tc1','tc2','tc3'].forEach(id=>document.getElementById(id)?.classList.remove('show'));
+  document.getElementById('cap1').style.width='0%';
+  document.getElementById('cap2').style.width='0%';
+  document.getElementById('cap3').style.width='0%';
+  document.getElementById('ml-notif').classList.remove('show');
+}
+
+// S6 QR
+function activateS6() {
+  setTimeout(()=>document.getElementById('bp').classList.add('show'), 80);
+  setTimeout(()=>document.getElementById('sc').classList.add('show'), 350);
+  setTimeout(()=>document.getElementById('scan-line').classList.add('active'), 900);
+  setTimeout(()=>{
+    const dot=document.getElementById('b-dot'), t=document.getElementById('b-title'), s=document.getElementById('b-sub');
+    if(dot){dot.textContent='✅';dot.className='ss-dot done';}
+    if(t) t.textContent='✓ Boarded';
+    if(s) s.textContent='QR scanned · 08:24';
+    const el=document.getElementById('s4-complete'); if(el) el.style.opacity='1';
+  }, 2900);
+}
+function deactivateS6() {
+  document.getElementById('bp').classList.remove('show');
+  document.getElementById('sc').classList.remove('show');
+  document.getElementById('scan-line').classList.remove('active');
+  const dot=document.getElementById('b-dot'); if(dot){dot.textContent='🔲';dot.className='ss-dot current';}
+  const t=document.getElementById('b-title'); if(t) t.textContent='Boarding — QR Scan';
+  const s=document.getElementById('b-sub'); if(s) s.textContent='Scan your boarding pass';
+  const el=document.getElementById('s4-complete'); if(el) el.style.opacity='.3';
+}
+
+// S7 Email Amendment
+let amendTimer1=null, amendTimer2=null, amendTimer3=null;
+function activateS7() {
+  setTimeout(()=>document.getElementById('s7t').classList.add('show'), 80);
+  setTimeout(()=>document.getElementById('email-client').classList.add('show'), 180);
+  setTimeout(()=>document.getElementById('email-content').classList.add('show'), 300);
+  // Auto-click amend after 1.8s
+  amendTimer1 = setTimeout(()=>{ document.getElementById('amend-overlay').classList.add('open'); }, 1900);
+  // Auto-confirm after 4.2s
+  amendTimer2 = setTimeout(()=>{ document.getElementById('amend-success').classList.add('show'); }, 4400);
+  // Show amended inbox row after 5s
+  amendTimer3 = setTimeout(()=>{
+    document.getElementById('inbox-amended').style.opacity='1';
+    document.getElementById('inbox-conf').classList.remove('sel');
+    document.getElementById('inbox-amended').classList.add('sel');
+    const s = document.getElementById('ec-subj-txt');
+    if(s) s.textContent='✏️ Amendment Confirmed — TF-2026-0041';
+  }, 5200);
+}
+function deactivateS7() {
+  [amendTimer1,amendTimer2,amendTimer3].forEach(t=>clearTimeout(t));
+  document.getElementById('s7t').classList.remove('show');
+  document.getElementById('email-client').classList.remove('show');
+  document.getElementById('email-content').classList.remove('show');
+  document.getElementById('amend-overlay').classList.remove('open');
+  document.getElementById('amend-success').classList.remove('show');
+  document.getElementById('inbox-amended').style.opacity='0';
+  document.getElementById('inbox-conf').classList.add('sel');
+  document.getElementById('inbox-amended').classList.remove('sel');
+  const s = document.getElementById('ec-subj-txt'); if(s) s.textContent='✅ Booking Confirmed — TF-2026-0041';
+}
+
+// S8 Daily Report
+let reportTimers = [];
+function activateS8() {
+  setTimeout(()=>document.getElementById('s8t').classList.add('show'), 80);
+  setTimeout(()=>document.getElementById('sched-card').classList.add('show'), 200);
+  setTimeout(()=>document.getElementById('report-preview').classList.add('show'), 380);
+  // Tick "Today" row to sent
+  reportTimers.push(setTimeout(()=>{
+    const r=document.getElementById('today-row'); if(r){r.className='sc-sent ok';r.textContent='✓ Sent';}
+  }, 2200));
+  // Trigger send animation
+  reportTimers.push(setTimeout(()=>{
+    const a=document.getElementById('send-anim'); if(a) a.classList.add('show');
+    setTimeout(()=>{ if(a) a.classList.remove('show'); }, 2000);
+  }, 2800));
+}
+function deactivateS8() {
+  reportTimers.forEach(t=>clearTimeout(t)); reportTimers=[];
+  document.getElementById('s8t').classList.remove('show');
+  document.getElementById('sched-card').classList.remove('show');
+  document.getElementById('report-preview').classList.remove('show');
+  document.getElementById('send-anim').classList.remove('show');
+  const r=document.getElementById('today-row'); if(r){r.className='sc-sent sched';r.textContent='⏳ Today';}
+}
+
+// S9 CTA
+function activateS9() {
+  ['c-ey','c-h','c-s','c-btns','c-note'].forEach((id,i)=>setTimeout(()=>document.getElementById(id)?.classList.add('show'),i*130+80));
+}
+function deactivateS9() {
+  ['c-ey','c-h','c-s','c-btns','c-note'].forEach(id=>document.getElementById(id)?.classList.remove('show'));
+}
+
+// ── Engine ───────────────────────────────────────────────
+function goToScene(idx, skipActivate=false) {
+  if(curScene === idx) return;
+  if(curScene >= 0) deactivate(curScene);
+  IDS.forEach((id,i)=>{ document.getElementById(id).classList.remove('active'); document.getElementById('dot-'+i).classList.remove('active'); });
+  curScene = idx;
+  document.getElementById(IDS[idx]).classList.add('active');
+  document.getElementById('dot-'+idx).classList.add('active');
+  document.getElementById('scene-label').textContent = LABELS[idx];
+  if(!skipActivate) activate(idx);
+}
+
+function updateHUD() {
+  const pct = Math.min(elapsed/TOTAL*100, 100);
+  document.getElementById('progress-bar').style.width = pct+'%';
+  const rem = Math.max(0, TOTAL-elapsed);
+  const s = Math.ceil(rem/1000), m = Math.floor(s/60);
+  document.getElementById('timer').textContent = m+':'+(s%60<10?'0':'')+(s%60);
+  document.getElementById('ctrl-time').textContent = '0:'+(Math.floor(elapsed/1000)<10?'0':'')+Math.floor(elapsed/1000);
+  // Scene switching
+  let target = 0;
+  for(let i=TIMES.length-1;i>=0;i--){ if(elapsed>=TIMES[i]){target=i;break;} }
+  if(target!==curScene) goToScene(target);
+}
+
+function tick(ts) {
+  if(!playing){lastTs=null;return;}
+  if(lastTs===null) lastTs=ts;
+  elapsed = Math.min(elapsed+(ts-lastTs), TOTAL);
+  lastTs = ts;
+  updateHUD();
+  if(elapsed>=TOTAL){ playing=false; document.getElementById('play-pause').textContent='▶'; document.getElementById('replay-overlay').classList.add('show'); return; }
+  rafId = requestAnimationFrame(tick);
+}
+
+function togglePlay() {
+  if(elapsed>=TOTAL){restartDemo();return;}
+  playing=!playing;
+  document.getElementById('play-pause').textContent=playing?'⏸':'▶';
+  if(playing){lastTs=null;rafId=requestAnimationFrame(tick);}
+}
+
+function prevScene() {
+  const p=Math.max(0,curScene-1); elapsed=TIMES[p]; goToScene(p); updateHUD();
+}
+function nextScene() {
+  const n=Math.min(IDS.length-1,curScene+1); elapsed=TIMES[n]; goToScene(n); updateHUD();
+}
+
+function restartDemo() {
+  elapsed=0; lastTs=null; playing=true;
+  document.getElementById('replay-overlay').classList.remove('show');
+  document.getElementById('play-pause').textContent='⏸';
+  if(curScene>=0) deactivate(curScene);
+  curScene=-1;
+  goToScene(0); updateHUD();
+  rafId=requestAnimationFrame(tick);
+}
+
+// Start
+goToScene(0);
+rafId=requestAnimationFrame(tick);
+</script>
+</body>
+</html>

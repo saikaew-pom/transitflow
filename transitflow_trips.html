@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TransitFlow – Trip Management</title>
+<style>
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: #1A1A2E; font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+.sidebar { width: 220px; min-width: 220px; background: #1E3A5F; display: flex; flex-direction: column; }
+.sidebar-logo { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.logo-mark { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 32px; height: 32px; background: #2E86AB; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.logo-icon svg { width: 18px; height: 18px; fill: #fff; }
+.logo-text { font-size: 16px; font-weight: 700; color: #fff; }
+.logo-sub { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; }
+.sidebar-project { margin: 14px 12px 8px; background: rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); }
+.sidebar-project label { font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 3px; }
+.sidebar-project .proj-name { font-size: 12px; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+.sidebar-project .proj-name svg { width: 12px; height: 12px; fill: rgba(255,255,255,0.4); }
+.sidebar-nav { padding: 8px 0; flex: 1; }
+.nav-section { padding: 10px 16px 4px; font-size: 9px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; color: rgba(255,255,255,0.6); cursor: pointer; border-left: 3px solid transparent; font-size: 13px; transition: all 0.15s; }
+.nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.nav-item.active { background: rgba(46,134,171,0.25); color: #fff; border-left-color: #2E86AB; font-weight: 600; }
+.nav-item svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+.nav-badge { margin-left: auto; background: #2E86AB; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+.nav-badge.amber { background: #E67E22; }
+.sidebar-user { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#2E86AB,#1E3A5F); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+.user-name { font-size: 12px; font-weight: 600; color: #fff; }
+.user-role { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+/* ── Main ─────────────────────────────────────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Topbar ───────────────────────────────────────────────────────────── */
+.topbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.topbar-title { font-size: 15px; font-weight: 700; color: #1E3A5F; }
+.topbar-sub { font-size: 11px; color: #8896A9; margin-top: 1px; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+.btn svg { width: 14px; height: 14px; fill: currentColor; }
+.btn-primary { background: #1E3A5F; color: #fff; }
+.btn-primary:hover { background: #2E86AB; }
+.btn-outline { background: #fff; color: #1E3A5F; border: 1.5px solid #C5D5E4; }
+.btn-outline:hover { background: #F0F6FA; }
+.btn-teal { background: #2E86AB; color: #fff; }
+.btn-teal:hover { background: #256E8C; }
+.topbar-icon { width: 36px; height: 36px; border-radius: 8px; background: #F0F4F8; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+.topbar-icon svg { width: 18px; height: 18px; fill: #5A6A7E; }
+.notif-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background: #E74C3C; border-radius: 50%; border: 1.5px solid #fff; }
+
+/* ── Stats ────────────────────────────────────────────────────────────── */
+.stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 16px 24px; flex-shrink: 0; }
+.stat-card { background: #fff; border-radius: 10px; padding: 14px 16px; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 4px; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 2px 0 0 2px; }
+.stat-card.blue::before { background: #2E86AB; }
+.stat-card.green::before { background: #27AE60; }
+.stat-card.amber::before { background: #F39C12; }
+.stat-card.red::before { background: #E74C3C; }
+.stat-card.purple::before { background: #8E44AD; }
+.stat-label { font-size: 11px; color: #8896A9; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 24px; font-weight: 700; color: #1E3A5F; line-height: 1; }
+.stat-sub { font-size: 11px; display: flex; align-items: center; gap: 3px; }
+.stat-sub.up { color: #27AE60; }
+.stat-sub.warn { color: #E67E22; }
+.stat-sub.neutral { color: #8896A9; }
+.stat-sub svg { width: 11px; height: 11px; fill: currentColor; }
+
+/* ── Controls ─────────────────────────────────────────────────────────── */
+.controls { padding: 0 24px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.date-tabs { display: flex; background: #E8EEF4; border-radius: 8px; padding: 3px; gap: 2px; }
+.date-tab { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; color: #5A6A7E; cursor: pointer; transition: all 0.15s; }
+.date-tab.active { background: #fff; color: #1E3A5F; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.filter-pill { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; font-size: 12px; border: 1.5px solid #C5D5E4; background: #fff; color: #5A6A7E; cursor: pointer; white-space: nowrap; }
+.filter-pill svg { width: 12px; height: 12px; fill: currentColor; }
+.filter-pill.on { border-color: #2E86AB; color: #2E86AB; background: #EAF4F9; }
+.search-box { display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 7px; border: 1.5px solid #C5D5E4; background: #fff; }
+.search-box svg { width: 14px; height: 14px; fill: #8896A9; }
+.search-box input { border: none; outline: none; font-size: 12px; color: #1A1A2E; width: 180px; background: transparent; }
+.search-box input::placeholder { color: #B0BEC5; }
+.spacer { flex: 1; }
+.export-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 7px; background: #1E3A5F; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+.export-btn svg { width: 13px; height: 13px; fill: currentColor; }
+
+/* ── Content / Trip Cards ─────────────────────────────────────────────── */
+.content-area { flex: 1; overflow-y: auto; padding: 0 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Trip Card ────────────────────────────────────────────────────────── */
+.trip-card { background: #fff; border-radius: 12px; border: 1.5px solid #E2E8F0; overflow: hidden; transition: box-shadow 0.2s; }
+.trip-card:hover { box-shadow: 0 4px 16px rgba(30,58,95,0.1); }
+.trip-card.locked { border-color: #AED6F1; }
+.trip-card.locked .trip-header { background: #F0F8FF; }
+
+.trip-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #F0F4F8; cursor: pointer; }
+
+/* trip id & route */
+.trip-id { font-size: 11px; font-weight: 700; color: #8896A9; white-space: nowrap; }
+.trip-route { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.trip-route .route-main { font-size: 13px; font-weight: 700; color: #1E3A5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trip-route .route-sub { font-size: 11px; color: #8896A9; }
+
+/* flight + time chip */
+.flight-chip { display: flex; align-items: center; gap: 5px; background: #F0F4F8; border-radius: 6px; padding: 5px 10px; white-space: nowrap; flex-shrink: 0; }
+.flight-chip svg { width: 13px; height: 13px; fill: #5A6A7E; }
+.flight-chip .fc-flight { font-size: 12px; font-weight: 700; color: #1E3A5F; }
+.flight-chip .fc-time { font-size: 11px; color: #8896A9; margin-left: 4px; }
+
+/* vehicle chip */
+.vehicle-chip { display: flex; align-items: center; gap: 5px; background: #EAF4F9; border-radius: 6px; padding: 5px 10px; white-space: nowrap; flex-shrink: 0; }
+.vehicle-chip svg { width: 14px; height: 14px; fill: #2E86AB; }
+.vehicle-chip span { font-size: 12px; font-weight: 600; color: #1A6F8A; }
+
+/* capacity bar */
+.cap-wrap { display: flex; flex-direction: column; gap: 3px; min-width: 90px; flex-shrink: 0; }
+.cap-row { display: flex; align-items: center; gap: 5px; }
+.cap-icon { font-size: 11px; }
+.cap-bar-bg { flex: 1; height: 5px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
+.cap-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.cap-bar.low { background: #27AE60; }
+.cap-bar.mid { background: #F39C12; }
+.cap-bar.high { background: #E74C3C; }
+.cap-label { font-size: 10px; color: #8896A9; white-space: nowrap; }
+
+/* badges */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.b-pending   { background: #FEF9E7; color: #B7770D; } .b-pending::before   { background: #F39C12; }
+.b-assigned  { background: #EAF4F9; color: #1A6F8A; } .b-assigned::before  { background: #2E86AB; }
+.b-arrived   { background: #F4ECF7; color: #6C3483; } .b-arrived::before   { background: #8E44AD; }
+.b-boarded   { background: #EEF4FA; color: #1E3A5F; } .b-boarded::before   { background: #1E3A5F; }
+.b-completed { background: #E8F8F0; color: #1E8449; } .b-completed::before { background: #27AE60; }
+.b-locked    { background: #E8EEF4; color: #5A6A7E; display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600; }
+.b-locked::before { display:none; }
+.b-locked svg { width:10px;height:10px;fill:currentColor; }
+.b-split     { background: #FFF3CD; color: #856404; }
+.b-split::before { background: #FFC107; }
+
+/* driver zone */
+.driver-zone { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.driver-assigned { display: flex; align-items: center; gap: 6px; }
+.driver-avatar { width: 26px; height: 26px; border-radius: 50%; background: #1E3A5F; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.driver-name { font-size: 12px; font-weight: 600; color: #1E3A5F; }
+.driver-plate { font-size: 10px; color: #8896A9; }
+.btn-assign { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 6px; border: 1.5px dashed #C5D5E4; background: transparent; color: #8896A9; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn-assign:hover { border-color: #2E86AB; color: #2E86AB; background: #EAF4F9; }
+.btn-assign svg { width: 12px; height: 12px; fill: currentColor; }
+.chevron { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: #B0BEC5; transition: transform 0.2s; flex-shrink: 0; margin-left: 4px; }
+.chevron svg { width: 14px; height: 14px; fill: currentColor; }
+.chevron.open { transform: rotate(180deg); }
+
+/* trip body (manifest) */
+.trip-body { display: none; padding: 0; }
+.trip-body.open { display: block; }
+.manifest-header { padding: 10px 16px; background: #F7FAFC; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; }
+.manifest-header span { font-size: 11px; font-weight: 700; color: #8896A9; text-transform: uppercase; letter-spacing: 0.5px; }
+.manifest-actions { display: flex; gap: 6px; }
+.btn-sm { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1.5px solid; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
+.btn-sm svg { width: 11px; height: 11px; fill: currentColor; }
+.btn-sm-outline { background: #fff; color: #1E3A5F; border-color: #C5D5E4; }
+.btn-sm-outline:hover { background: #F0F6FA; }
+.btn-sm-danger { background: #fff; color: #E74C3C; border-color: #F5B7B1; }
+.btn-sm-danger:hover { background: #FDEDEC; }
+.btn-sm-purple { background: #fff; color: #8E44AD; border-color: #D2B4DE; }
+.btn-sm-purple:hover { background: #F4ECF7; }
+
+/* passenger rows */
+.manifest-table { width: 100%; border-collapse: collapse; }
+.manifest-table th { padding: 8px 16px; text-align: left; font-size: 10px; font-weight: 700; color: #8896A9; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #E2E8F0; background: #FAFCFE; }
+.manifest-table td { padding: 10px 16px; border-bottom: 1px solid #F0F4F8; font-size: 13px; vertical-align: middle; }
+.manifest-table tr:last-child td { border-bottom: none; }
+.manifest-table tr:hover td { background: #F7FAFC; }
+.pax-name { font-weight: 600; color: #1E3A5F; }
+.pax-email { font-size: 11px; color: #8896A9; }
+.pax-detail { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #5A6A7E; }
+.pax-detail svg { width: 12px; height: 12px; fill: currentColor; }
+.ref-tag { background: #F0F4F8; color: #5A6A7E; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.tag-vip { background: #EEF4FA; color: #1E3A5F; }
+.tag-speaker { background: #F4ECF7; color: #6C3483; }
+.tag-press { background: #E8F8F0; color: #1E8449; }
+.action-sm { display: flex; gap: 4px; }
+.icon-btn { width: 26px; height: 26px; border-radius: 5px; border: 1px solid #E2E8F0; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+.icon-btn:hover { background: #F0F4F8; }
+.icon-btn svg { width: 12px; height: 12px; fill: #5A6A7E; }
+
+/* status progress bar (within card body) */
+.status-strip { padding: 10px 16px 12px; border-top: 1px solid #F0F4F8; display: flex; align-items: center; gap: 0; }
+.status-step { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ss-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #B0BEC5; background: #fff; }
+.ss-circle.done { background: #27AE60; border-color: #27AE60; color: #fff; }
+.ss-circle.active { background: #1E3A5F; border-color: #1E3A5F; color: #fff; }
+.ss-label { font-size: 9px; color: #B0BEC5; white-space: nowrap; }
+.ss-label.done { color: #27AE60; }
+.ss-label.active { color: #1E3A5F; font-weight: 700; }
+.ss-line { flex: 1; height: 2px; background: #E2E8F0; margin-bottom: 12px; }
+.ss-line.done { background: #27AE60; }
+
+/* ── Driver Slide Panel ───────────────────────────────────────────────── */
+.panel-overlay { position: fixed; inset: 0; background: rgba(15,25,50,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.panel-overlay.open { opacity: 1; pointer-events: all; }
+.side-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 400px; background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; transform: translateX(60px); transition: transform 0.25s; overflow: hidden; }
+.panel-overlay.open .side-panel { transform: translateX(0); }
+.panel-head { padding: 18px 20px 14px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0; }
+.panel-head .ph-title { font-size: 15px; font-weight: 700; color: #1E3A5F; }
+.panel-head .ph-sub { font-size: 12px; color: #8896A9; margin-top: 2px; }
+.close-btn { width: 28px; height: 28px; border-radius: 6px; background: #F0F4F8; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #5A6A7E; }
+.close-btn:hover { background: #E2E8F0; }
+.panel-body { padding: 18px 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.panel-trip-info { background: #F0F8FF; border: 1.5px solid #AED6F1; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.pti-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.pti-row .lbl { color: #8896A9; }
+.pti-row .val { font-weight: 600; color: #1E3A5F; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+label.fl { font-size: 11px; font-weight: 700; color: #5A6A7E; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-control { border: 1.5px solid #E2E8F0; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #1A1A2E; background: #fff; outline: none; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; width: 100%; }
+.form-control:focus { border-color: #2E86AB; box-shadow: 0 0 0 3px rgba(46,134,171,0.12); }
+.form-control.filled { background: #F7FAFC; border-color: #C5D5E4; }
+.magic-link-box { background: #E8F8F0; border: 1px solid #A9DFBF; border-radius: 8px; padding: 10px 12px; }
+.ml-label { font-size: 10px; font-weight: 700; color: #1E8449; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.ml-url { font-size: 11px; color: #1E8449; word-break: break-all; display: flex; align-items: center; gap: 6px; }
+.ml-url svg { width: 13px; height: 13px; fill: currentColor; flex-shrink: 0; }
+.sms-note { background: #FEF9E7; border: 1px solid #F9E4A0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #7D5A10; display: flex; gap: 7px; align-items: flex-start; }
+.sms-note svg { width: 14px; height: 14px; fill: #F39C12; flex-shrink: 0; margin-top: 1px; }
+.panel-footer { padding: 14px 20px; border-top: 1px solid #E2E8F0; display: flex; gap: 8px; flex-shrink: 0; }
+.panel-footer .btn { flex: 1; justify-content: center; }
+
+/* ── Split Modal ──────────────────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(15,25,50,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; padding: 20px; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); transform: scale(0.95); transition: transform 0.2s; overflow: hidden; }
+.modal-overlay.open .modal-box { transform: scale(1); }
+.modal-head { padding: 18px 20px 14px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: flex-start; justify-content: space-between; }
+.modal-head .mh-icon { width: 38px; height: 38px; border-radius: 9px; background: #F4ECF7; display: flex; align-items: center; justify-content: center; margin-right: 10px; flex-shrink: 0; }
+.modal-head .mh-icon svg { width: 19px; height: 19px; fill: #8E44AD; }
+.modal-head .mh-title { font-size: 15px; font-weight: 700; color: #1E3A5F; }
+.modal-head .mh-sub { font-size: 12px; color: #8896A9; margin-top: 2px; }
+.modal-body { padding: 16px 20px; max-height: 55vh; overflow-y: auto; }
+.modal-body .mb-label { font-size: 11px; font-weight: 700; color: #8896A9; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.split-pax-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; border: 1.5px solid #E2E8F0; background: #F7FAFC; margin-bottom: 6px; cursor: pointer; transition: all 0.15s; }
+.split-pax-row:hover { border-color: #8E44AD; background: #F9F0FF; }
+.split-pax-row.selected { border-color: #8E44AD; background: #F4ECF7; }
+.split-pax-row .sp-check { width: 18px; height: 18px; border-radius: 4px; border: 2px solid #C5D5E4; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+.split-pax-row.selected .sp-check { background: #8E44AD; border-color: #8E44AD; }
+.split-pax-row.selected .sp-check::after { content: '✓'; font-size: 11px; font-weight: 700; color: #fff; }
+.split-pax-row .sp-name { font-weight: 600; font-size: 13px; color: #1E3A5F; }
+.split-pax-row .sp-detail { font-size: 11px; color: #8896A9; }
+.split-warning { background: #FEF9E7; border: 1px solid #F9E4A0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #7D5A10; margin-top: 12px; display: flex; gap: 7px; }
+.split-warning svg { width: 14px; height: 14px; fill: #F39C12; flex-shrink: 0; margin-top: 1px; }
+.modal-footer { padding: 14px 20px; border-top: 1px solid #E2E8F0; display: flex; gap: 8px; }
+.modal-footer .btn { flex: 1; justify-content: center; }
+.btn-purple { background: #8E44AD; color: #fff; }
+.btn-purple:hover { background: #7D3C98; }
+.btn-ghost { background: transparent; color: #5A6A7E; border: 1.5px solid #C5D5E4; }
+.btn-ghost:hover { background: #F0F4F8; }
+
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #C5D5E4; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+      <div><div class="logo-text">TransitFlow</div><div class="logo-sub">EO Dashboard</div></div>
+    </div>
+  </div>
+  <div class="sidebar-project">
+    <label>Active Project</label>
+    <div class="proj-name">APAC Summit 2026 <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard</div>
+    <div class="nav-section">Operations</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.52 15.48 0 12.38 0 10.79 0 9.38.65 8.37 1.67L7 3H4c-1.1 0-2 .9-2 2v15c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>Bookings <span class="nav-badge">24</span></div>
+    <div class="nav-item active"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>Trips <span class="nav-badge amber">3</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Passengers</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Messages <span class="nav-badge">5</span></div>
+    <div class="nav-section">Config</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.07.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>Project Settings</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42z"/></svg>Promo Codes</div>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-avatar">JL</div>
+    <div><div class="user-name">Jamie Lee</div><div class="user-role">Event Organizer</div></div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="main">
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Trip Management</div>
+      <div class="topbar-sub">APAC Summit 2026 · Auto-allocated trips grouped by flight & pickup time</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-icon"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><div class="notif-dot"></div></div>
+      <button class="btn btn-outline"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-2 .9-2 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>14 Apr 2026</button>
+      <button class="btn btn-teal" onclick="alert('Auto-allocation re-run complete. 2 trips updated.')">
+        <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        Re-run Allocation
+      </button>
+      <button class="export-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card blue">
+      <div class="stat-label">Total Trips</div>
+      <div class="stat-value">18</div>
+      <div class="stat-sub neutral">Today: 7</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Driver Unassigned</div>
+      <div class="stat-value">3</div>
+      <div class="stat-sub warn"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Needs action</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Completed Today</div>
+      <div class="stat-value">4</div>
+      <div class="stat-sub up"><svg viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>On schedule</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">In Progress</div>
+      <div class="stat-value">2</div>
+      <div class="stat-sub neutral">Boarded / Arrived</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Locked Trips</div>
+      <div class="stat-value">5</div>
+      <div class="stat-sub neutral">Skipped in re-alloc</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="date-tabs">
+      <div class="date-tab">13 Apr</div>
+      <div class="date-tab active">14 Apr</div>
+      <div class="date-tab">15 Apr</div>
+      <div class="date-tab">16 Apr</div>
+      <div class="date-tab">17 Apr</div>
+      <div class="date-tab">18 Apr</div>
+    </div>
+    <div class="search-box">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" placeholder="Search flight, driver, hotel…"/>
+    </div>
+    <div class="filter-pill on"><svg viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>Status: All</div>
+    <div class="filter-pill"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>Airport</div>
+    <div class="filter-pill"><svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>Vehicle</div>
+    <div class="filter-pill"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>Locked</div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- Trip Cards -->
+  <div class="content-area" id="tripList">
+
+    <!-- ── Trip 1: In Progress (Boarded) ─────────────────────────────── -->
+    <div class="trip-card locked" id="tc1">
+      <div class="trip-header" onclick="toggleTrip('tc1')">
+        <div>
+          <div class="trip-id">TRIP-041</div>
+        </div>
+        <div class="trip-route">
+          <div class="route-main">✈ BKK (Suvarnabhumi) → Anantara Riverside</div>
+          <div class="route-sub">Airport to Hotel · 14 Apr 2026</div>
+        </div>
+        <div class="flight-chip">
+          <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+          <span class="fc-flight">TG 311</span>
+          <span class="fc-time">09:30</span>
+        </div>
+        <div class="vehicle-chip">
+          <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+          <span>Sedan</span>
+        </div>
+        <div class="cap-wrap">
+          <div class="cap-row">
+            <span class="cap-icon">👤</span>
+            <div class="cap-bar-bg"><div class="cap-bar mid" style="width:67%"></div></div>
+            <span class="cap-label">2/3</span>
+          </div>
+          <div class="cap-row">
+            <span class="cap-icon">🧳</span>
+            <div class="cap-bar-bg"><div class="cap-bar mid" style="width:67%"></div></div>
+            <span class="cap-label">2/3</span>
+          </div>
+        </div>
+        <span class="badge b-boarded">Boarded</span>
+        <span class="b-locked"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>Locked</span>
+        <div class="driver-zone">
+          <div class="driver-assigned">
+            <div class="driver-avatar">KS</div>
+            <div><div class="driver-name">Krit Sompong</div><div class="driver-plate">กข 1234 · BKK</div></div>
+          </div>
+        </div>
+        <div class="chevron open" id="chev-tc1"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+      </div>
+      <div class="trip-body open" id="body-tc1">
+        <div class="status-strip">
+          <div class="status-step"><div class="ss-circle done">✓</div><div class="ss-label done">Assigned</div></div>
+          <div class="ss-line done"></div>
+          <div class="status-step"><div class="ss-circle done">✓</div><div class="ss-label done">Arrived</div></div>
+          <div class="ss-line done"></div>
+          <div class="status-step"><div class="ss-circle active">▶</div><div class="ss-label active">Boarded</div></div>
+          <div class="ss-line"></div>
+          <div class="status-step"><div class="ss-circle">4</div><div class="ss-label">Completed</div></div>
+        </div>
+        <div class="manifest-header">
+          <span>Passenger Manifest (2 pax)</span>
+          <div class="manifest-actions">
+            <button class="btn-sm btn-sm-purple" onclick="openSplit()"><svg viewBox="0 0 24 24"><path d="M14 4l2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3z"/></svg>Split Guest</button>
+            <button class="btn-sm btn-sm-outline"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>Edit Driver</button>
+          </div>
+        </div>
+        <table class="manifest-table">
+          <thead>
+            <tr><th>Passenger</th><th>Booking Ref</th><th>Pax / Bags</th><th>Tags</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="pax-name">Sarah Mitchell</div><div class="pax-email">s.mitchell@corp.com</div></td>
+              <td><span class="ref-tag">TF-00421</span></td>
+              <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>2 · 🧳2</div></td>
+              <td><span class="ref-tag tag-vip">VIP</span></td>
+              <td><span class="badge b-boarded">Boarded</span></td>
+              <td><div class="action-sm"><div class="icon-btn" title="View booking"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Trip 2: Driver Assigned, Pending ───────────────────────────── -->
+    <div class="trip-card" id="tc2">
+      <div class="trip-header" onclick="toggleTrip('tc2')">
+        <div><div class="trip-id">TRIP-042</div></div>
+        <div class="trip-route">
+          <div class="route-main">✈ BKK (Suvarnabhumi) → Centara Grand</div>
+          <div class="route-sub">Airport to Hotel · 14 Apr 2026</div>
+        </div>
+        <div class="flight-chip">
+          <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+          <span class="fc-flight">TG 311</span>
+          <span class="fc-time">10:15</span>
+        </div>
+        <div class="vehicle-chip">
+          <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+          <span>Van (7-seater)</span>
+        </div>
+        <div class="cap-wrap">
+          <div class="cap-row"><span class="cap-icon">👤</span><div class="cap-bar-bg"><div class="cap-bar high" style="width:86%"></div></div><span class="cap-label">6/7</span></div>
+          <div class="cap-row"><span class="cap-icon">🧳</span><div class="cap-bar-bg"><div class="cap-bar high" style="width:100%"></div></div><span class="cap-label">7/7</span></div>
+        </div>
+        <span class="badge b-assigned">Driver Assigned</span>
+        <div class="driver-zone">
+          <div class="driver-assigned">
+            <div class="driver-avatar">NP</div>
+            <div><div class="driver-name">Nattapol Pun.</div><div class="driver-plate">งง 5678 · BKK</div></div>
+          </div>
+        </div>
+        <div class="chevron" id="chev-tc2"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+      </div>
+      <div class="trip-body" id="body-tc2">
+        <div class="status-strip">
+          <div class="status-step"><div class="ss-circle done">✓</div><div class="ss-label done">Assigned</div></div>
+          <div class="ss-line"></div>
+          <div class="status-step"><div class="ss-circle active">2</div><div class="ss-label active">Arrived</div></div>
+          <div class="ss-line"></div>
+          <div class="status-step"><div class="ss-circle">3</div><div class="ss-label">Boarded</div></div>
+          <div class="ss-line"></div>
+          <div class="status-step"><div class="ss-circle">4</div><div class="ss-label">Completed</div></div>
+        </div>
+        <div class="manifest-header">
+          <span>Passenger Manifest (6 pax)</span>
+          <div class="manifest-actions">
+            <button class="btn-sm btn-sm-purple" onclick="openSplit()"><svg viewBox="0 0 24 24"><path d="M14 4l2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3z"/></svg>Split Guest</button>
+            <button class="btn-sm btn-sm-outline" onclick="openDriverPanel('tc2')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>Edit Driver</button>
+          </div>
+        </div>
+        <table class="manifest-table">
+          <thead><tr><th>Passenger</th><th>Booking Ref</th><th>Pax / Bags</th><th>Tags</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="pax-name">Marcus Okafor</div><div class="pax-email">m.okafor@gmail.com</div></td>
+              <td><span class="ref-tag">TF-00418</span></td>
+              <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>1 · 🧳1</div></td>
+              <td>—</td>
+              <td><span class="badge b-assigned">Assigned</span></td>
+              <td><div class="action-sm"><div class="icon-btn"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg></div></div></td>
+            </tr>
+            <tr>
+              <td><div class="pax-name">Priya Sharma</div><div class="pax-email">priya.s@techcorp.io</div></td>
+              <td><span class="ref-tag">TF-00415</span></td>
+              <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>4 · 🧳5</div></td>
+              <td><span class="ref-tag tag-speaker">Speaker</span></td>
+              <td><span class="badge b-assigned">Assigned</span></td>
+              <td><div class="action-sm"><div class="icon-btn"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg></div></div></td>
+            </tr>
+            <tr>
+              <td><div class="pax-name">Nina Kowalski</div><div class="pax-email">n.kowalski@uni.pl</div></td>
+              <td><span class="ref-tag">TF-00398</span></td>
+              <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>1 · 🧳1</div></td>
+              <td>—</td>
+              <td><span class="badge b-assigned">Assigned</span></td>
+              <td><div class="action-sm"><div class="icon-btn"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg></div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Trip 3: No Driver Yet ───────────────────────────────────────── -->
+    <div class="trip-card" id="tc3">
+      <div class="trip-header" onclick="toggleTrip('tc3')">
+        <div><div class="trip-id">TRIP-043</div></div>
+        <div class="trip-route">
+          <div class="route-main">✈ BKK (Suvarnabhumi) → Mandarin Oriental</div>
+          <div class="route-sub">Airport to Hotel · 14 Apr 2026</div>
+        </div>
+        <div class="flight-chip">
+          <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+          <span class="fc-flight">EK 373</span>
+          <span class="fc-time">14:45</span>
+        </div>
+        <div class="vehicle-chip">
+          <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+          <span>Sedan</span>
+        </div>
+        <div class="cap-wrap">
+          <div class="cap-row"><span class="cap-icon">👤</span><div class="cap-bar-bg"><div class="cap-bar low" style="width:67%"></div></div><span class="cap-label">2/3</span></div>
+          <div class="cap-row"><span class="cap-icon">🧳</span><div class="cap-bar-bg"><div class="cap-bar mid" style="width:100%"></div></div><span class="cap-label">3/3</span></div>
+        </div>
+        <span class="badge b-pending">No Driver</span>
+        <div class="driver-zone">
+          <button class="btn-assign" onclick="openDriverPanel('tc3');event.stopPropagation()">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Assign Driver
+          </button>
+        </div>
+        <div class="chevron" id="chev-tc3"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+      </div>
+      <div class="trip-body" id="body-tc3">
+        <div class="status-strip">
+          <div class="status-step"><div class="ss-circle active">1</div><div class="ss-label active">Assign Driver</div></div>
+          <div class="ss-line"></div>
+          <div class="status-step"><div class="ss-circle">2</div><div class="ss-label">Arrived</div></div>
+          <div class="ss-line"></div>
+          <div class="status-step"><div class="ss-circle">3</div><div class="ss-label">Boarded</div></div>
+          <div class="ss-line"></div>
+          <div class="status-step"><div class="ss-circle">4</div><div class="ss-label">Completed</div></div>
+        </div>
+        <div class="manifest-header">
+          <span>Passenger Manifest (2 pax)</span>
+          <div class="manifest-actions">
+            <button class="btn-sm btn-sm-purple" onclick="openSplit()"><svg viewBox="0 0 24 24"><path d="M14 4l2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3z"/></svg>Split Guest</button>
+            <button class="btn-sm btn-sm-outline" onclick="openDriverPanel('tc3')"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Assign Driver</button>
+          </div>
+        </div>
+        <table class="manifest-table">
+          <thead><tr><th>Passenger</th><th>Booking Ref</th><th>Pax / Bags</th><th>Tags</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="pax-name">Aisha Al-Rashid</div><div class="pax-email">aisha.ar@media.ae</div></td>
+              <td><span class="ref-tag">TF-00409</span></td>
+              <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>2 · 🧳3</div></td>
+              <td><span class="ref-tag tag-press">Press</span></td>
+              <td><span class="badge b-pending">Pending</span></td>
+              <td><div class="action-sm"><div class="icon-btn"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg></div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Trip 4: Completed ───────────────────────────────────────────── -->
+    <div class="trip-card" id="tc4" style="opacity:0.75">
+      <div class="trip-header" onclick="toggleTrip('tc4')">
+        <div><div class="trip-id">TRIP-038</div></div>
+        <div class="trip-route">
+          <div class="route-main">🏨 Lebua at State Tower → BKK (Suvarnabhumi)</div>
+          <div class="route-sub">Hotel to Airport · 14 Apr 2026</div>
+        </div>
+        <div class="flight-chip">
+          <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+          <span class="fc-flight">QR 836</span>
+          <span class="fc-time">06:00</span>
+        </div>
+        <div class="vehicle-chip" style="background:#E8F8F0">
+          <svg viewBox="0 0 24 24" style="fill:#27AE60"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+          <span style="color:#1E8449">Sedan</span>
+        </div>
+        <div class="cap-wrap">
+          <div class="cap-row"><span class="cap-icon">👤</span><div class="cap-bar-bg"><div class="cap-bar low" style="width:33%"></div></div><span class="cap-label">1/3</span></div>
+          <div class="cap-row"><span class="cap-icon">🧳</span><div class="cap-bar-bg"><div class="cap-bar mid" style="width:67%"></div></div><span class="cap-label">2/3</span></div>
+        </div>
+        <span class="badge b-completed">Completed</span>
+        <div class="driver-zone">
+          <div class="driver-assigned">
+            <div class="driver-avatar" style="background:#27AE60">TC</div>
+            <div><div class="driver-name">Thana Chai</div><div class="driver-plate">จข 9012 · BKK</div></div>
+          </div>
+        </div>
+        <div class="chevron" id="chev-tc4"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+      </div>
+      <div class="trip-body" id="body-tc4">
+        <div class="status-strip">
+          <div class="status-step"><div class="ss-circle done">✓</div><div class="ss-label done">Assigned</div></div>
+          <div class="ss-line done"></div>
+          <div class="status-step"><div class="ss-circle done">✓</div><div class="ss-label done">Arrived</div></div>
+          <div class="ss-line done"></div>
+          <div class="status-step"><div class="ss-circle done">✓</div><div class="ss-label done">Boarded</div></div>
+          <div class="ss-line done"></div>
+          <div class="status-step"><div class="ss-circle done">✓</div><div class="ss-label done">Completed</div></div>
+        </div>
+        <div class="manifest-header">
+          <span>Passenger Manifest (1 pax) — Completed 06:42</span>
+          <div class="manifest-actions">
+            <button class="btn-sm btn-sm-outline"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg>View Log</button>
+          </div>
+        </div>
+        <table class="manifest-table">
+          <thead><tr><th>Passenger</th><th>Booking Ref</th><th>Pax / Bags</th><th>Tags</th><th>Completed</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="pax-name">David Chen</div><div class="pax-email">d.chen@summit.org</div></td>
+              <td><span class="ref-tag">TF-00411</span></td>
+              <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>1 · 🧳2</div></td>
+              <td>—</td>
+              <td><span class="badge b-completed">06:42 ✓</span></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     DRIVER ASSIGNMENT PANEL
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="panel-overlay" id="driverPanel" onclick="handlePanelClick(event)">
+  <div class="side-panel">
+    <div class="panel-head">
+      <div>
+        <div class="ph-title">Assign Driver</div>
+        <div class="ph-sub">TRIP-043 · EK 373 · 14 Apr 14:45 → Mandarin Oriental</div>
+      </div>
+      <button class="close-btn" onclick="closeDriverPanel()">✕</button>
+    </div>
+    <div class="panel-body">
+
+      <div class="panel-trip-info">
+        <div class="pti-row"><span class="lbl">Route</span><span class="val">BKK → Mandarin Oriental</span></div>
+        <div class="pti-row"><span class="lbl">Flight</span><span class="val">EK 373</span></div>
+        <div class="pti-row"><span class="lbl">Pickup Time</span><span class="val">14 Apr 2026 · 14:45</span></div>
+        <div class="pti-row"><span class="lbl">Vehicle</span><span class="val">Sedan (2 pax · 3 bags)</span></div>
+        <div class="pti-row"><span class="lbl">Meeting Point</span><span class="val">Arrivals Hall Gate 5 — TransitFlow Desk</span></div>
+      </div>
+
+      <div class="form-group">
+        <label class="fl">Driver Name <span style="color:#E74C3C">*</span></label>
+        <input type="text" class="form-control" placeholder="Full name" value="Somchai Rattana"/>
+      </div>
+      <div class="form-group">
+        <label class="fl">Driver Contact (Mobile) <span style="color:#E74C3C">*</span></label>
+        <input type="tel" class="form-control" placeholder="+66 8x xxx xxxx" value="+66 89 234 5678"/>
+      </div>
+      <div class="form-group">
+        <label class="fl">License Plate <span style="color:#E74C3C">*</span></label>
+        <input type="text" class="form-control" placeholder="e.g. กข 1234 BKK" value="ขข 3456 · BKK" style="text-transform:uppercase;font-weight:600;letter-spacing:1px"/>
+      </div>
+
+      <div class="sms-note">
+        <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <span>On save, a <strong>Driver Magic Link</strong> will be auto-generated and sent to this number via SMS/WhatsApp. The driver can use it to view the manifest and update trip status.</span>
+      </div>
+
+      <div class="magic-link-box" style="display:none" id="magicLinkBox">
+        <div class="ml-label">✓ Magic Link Generated & Sent</div>
+        <div class="ml-url">
+          <svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+          https://transit.flow/d/TRIP-043/mlink/xK9pQr...
+        </div>
+      </div>
+
+    </div>
+    <div class="panel-footer">
+      <button class="btn btn-ghost" onclick="closeDriverPanel()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDriver()">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Save & Send Magic Link
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     SPLIT GUEST MODAL
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="splitModal" onclick="handleSplitClick(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="mh-icon"><svg viewBox="0 0 24 24"><path d="M14 4l2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3z"/></svg></div>
+      <div>
+        <div class="mh-title">Split Guest from Trip</div>
+        <div class="mh-sub">TRIP-042 · TG 311 · 10:15 · Van (7-seater)</div>
+      </div>
+      <button class="close-btn" onclick="closeSplit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="mb-label">Select passenger(s) to move to a new trip</div>
+      <div class="split-pax-row" onclick="toggleSplitPax(this)" id="sp1">
+        <div><div class="pax-name">Priya Sharma</div><div class="pax-email">priya.s@techcorp.io · 4 pax · 5 bags · Speaker</div></div>
+        <div class="sp-check"></div>
+      </div>
+      <div class="split-pax-row" onclick="toggleSplitPax(this)">
+        <div><div class="pax-name">Marcus Okafor</div><div class="pax-email">m.okafor@gmail.com · 1 pax · 1 bag</div></div>
+        <div class="sp-check"></div>
+      </div>
+      <div class="split-pax-row" onclick="toggleSplitPax(this)">
+        <div><div class="pax-name">Nina Kowalski</div><div class="pax-email">n.kowalski@uni.pl · 1 pax · 1 bag</div></div>
+        <div class="sp-check"></div>
+      </div>
+      <div class="split-warning">
+        <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <span>The new trip will be automatically <strong>locked</strong> (Is_Locked = Yes) to prevent re-allocation. The original trip will be re-evaluated — vehicle type may downgrade if a smaller vehicle now fits.</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeSplit()">Cancel</button>
+      <button class="btn btn-purple" onclick="confirmSplit()">
+        <svg viewBox="0 0 24 24"><path d="M14 4l2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3z"/></svg>
+        Split to New Trip
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleTrip(id) {
+    const body = document.getElementById('body-' + id);
+    const chev = document.getElementById('chev-' + id);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chev.classList.toggle('open', !isOpen);
+  }
+
+  function openDriverPanel(id) {
+    document.getElementById('driverPanel').classList.add('open');
+    document.getElementById('magicLinkBox').style.display = 'none';
+  }
+  function closeDriverPanel() {
+    document.getElementById('driverPanel').classList.remove('open');
+  }
+  function handlePanelClick(e) {
+    if (e.target === document.getElementById('driverPanel')) closeDriverPanel();
+  }
+  function saveDriver() {
+    document.getElementById('magicLinkBox').style.display = 'block';
+    setTimeout(() => {
+      closeDriverPanel();
+      // update trip 3 badge
+      const t3 = document.getElementById('tc3');
+      t3.querySelector('.badge').className = 'badge b-assigned';
+      t3.querySelector('.badge').textContent = 'Driver Assigned';
+      t3.querySelector('.btn-assign').outerHTML = '<div class="driver-assigned"><div class="driver-avatar">SR</div><div><div class="driver-name">Somchai Rattana</div><div class="driver-plate">ขข 3456 · BKK</div></div></div>';
+    }, 1200);
+  }
+
+  function openSplit() { document.getElementById('splitModal').classList.add('open'); }
+  function closeSplit() { document.getElementById('splitModal').classList.remove('open'); }
+  function handleSplitClick(e) { if (e.target === document.getElementById('splitModal')) closeSplit(); }
+  function toggleSplitPax(el) { el.classList.toggle('selected'); }
+  function confirmSplit() {
+    closeSplit();
+    setTimeout(() => { alert('Guest split complete.\nNew locked trip TRIP-044 created.\nOriginal TRIP-042 downgraded from Van to Sedan.'); }, 200);
+  }
+</script>
+</body>
+</html>

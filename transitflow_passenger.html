@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+<title>TransitFlow – My Booking</title>
+<style>
+/* ── Reset & Base ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #F0F4F8;
+  color: #1A1A2E;
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+:root {
+  --navy:   #1E3A5F;
+  --teal:   #2E86AB;
+  --teal-l: #EAF4F9;
+  --green:  #27AE60;
+  --amber:  #F39C12;
+  --red:    #E74C3C;
+  --purple: #8E44AD;
+  --gray1:  #F7FAFC;
+  --gray2:  #E2E8F0;
+  --gray3:  #C5D5E4;
+  --gray4:  #8896A9;
+  --gray5:  #5A6A7E;
+  --dark:   #1A1A2E;
+  --r:      12px;
+  --sh:     0 2px 12px rgba(30,58,95,0.10);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  background: linear-gradient(160deg, var(--navy) 0%, #2C5282 55%, var(--teal) 100%);
+  padding: 20px 20px 56px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -30px; left: -10%; right: -10%;
+  height: 60px;
+  background: #F0F4F8;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand-icon { width: 28px; height: 28px; background: var(--teal); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+.brand-icon svg { width: 15px; height: 15px; fill: #fff; }
+.brand-name { font-size: 15px; font-weight: 700; color: #fff; }
+.help-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+.help-btn svg { width: 16px; height: 16px; fill: rgba(255,255,255,0.8); }
+
+.booking-hero { text-align: center; }
+.hero-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+.hero-ref { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: 2px; margin-bottom: 4px; }
+.hero-event { font-size: 13px; color: rgba(255,255,255,0.65); margin-bottom: 14px; }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  background: rgba(255,255,255,0.18); color: #fff; border: 1.5px solid rgba(255,255,255,0.3);
+}
+.status-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+.status-pill.pending::before { background: #fbbf24; }
+.status-pill.cancelled::before { background: #f87171; }
+
+/* ── Page wrap ──────────────────────────────────────────────────────────── */
+.page-wrap { padding: 0 16px 40px; position: relative; z-index: 1; margin-top: -10px; }
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+.card {
+  background: #fff; border-radius: var(--r);
+  box-shadow: var(--sh); margin-bottom: 12px;
+  border: 1px solid var(--gray2); overflow: hidden;
+}
+.card-header {
+  padding: 13px 16px 11px; border-bottom: 1px solid var(--gray2);
+  display: flex; align-items: center; gap: 10px;
+}
+.ch-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ch-icon.navy { background: var(--navy); }
+.ch-icon.teal { background: var(--teal-l); }
+.ch-icon.green { background: #E8F8F0; }
+.ch-icon.amber { background: #FEF9E7; }
+.ch-icon.purple { background: #F4ECF7; }
+.ch-icon svg { width: 15px; height: 15px; fill: #fff; }
+.ch-icon.teal svg { fill: var(--teal); }
+.ch-icon.green svg { fill: var(--green); }
+.ch-icon.amber svg { fill: var(--amber); }
+.ch-icon.purple svg { fill: var(--purple); }
+.ch-title { font-size: 13px; font-weight: 700; color: var(--navy); }
+.ch-sub { font-size: 11px; color: var(--gray4); margin-top: 1px; }
+.ch-badge { margin-left: auto; }
+.card-body { padding: 14px 16px; }
+
+/* ── Badges ─────────────────────────────────────────────────────────────── */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.b-confirmed { background: #E8F8F0; color: #1E8449; }
+.b-pending    { background: #FEF9E7; color: #B7770D; }
+.b-cancelled  { background: #FDEDEC; color: #A93226; }
+.b-paid       { background: #E8F8F0; color: #1E8449; border: 1px solid #A9DFBF; }
+.b-unpaid     { background: #FDEDEC; color: #A93226; border: 1px solid #F5B7B1; }
+.b-stripe     { background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; }
+.b-locked     { background: #FEF9E7; color: #B7770D; border: 1px solid #F9E4A0; font-size: 10px; }
+
+/* ── Guest info strip ───────────────────────────────────────────────────── */
+.guest-strip { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.guest-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--navy), var(--teal)); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.guest-name { font-size: 15px; font-weight: 700; color: var(--navy); }
+.guest-email { font-size: 12px; color: var(--gray4); margin-top: 2px; }
+.guest-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+
+/* ── Leg card ───────────────────────────────────────────────────────────── */
+.leg { border: 1.5px solid var(--gray2); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+.leg:last-child { margin-bottom: 0; }
+.leg-head {
+  padding: 10px 13px; background: var(--gray1);
+  border-bottom: 1px solid var(--gray2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.leg-dir { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--navy); }
+.leg-dir svg { width: 14px; height: 14px; fill: var(--teal); }
+.leg-body { padding: 12px 13px; display: flex; flex-direction: column; gap: 8px; }
+.leg-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.leg-row .lbl { font-size: 11px; color: var(--gray4); flex-shrink: 0; padding-top: 1px; }
+.leg-row .val { font-size: 12px; font-weight: 600; color: var(--dark); text-align: right; max-width: 240px; }
+.leg-row .val.green { color: var(--green); }
+.leg-row .val.amber { color: var(--amber); }
+.meeting-point-pill {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--teal-l); border: 1px solid #AED6F1;
+  border-radius: 8px; padding: 9px 11px; font-size: 12px; color: #1A6F8A;
+}
+.meeting-point-pill svg { width: 14px; height: 14px; fill: var(--teal); flex-shrink: 0; margin-top: 1px; }
+.leg-price-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 13px; background: #F0F8FF;
+  border-top: 1px solid var(--gray2);
+}
+.lp-label { font-size: 12px; color: var(--gray4); }
+.lp-price { display: flex; align-items: center; gap: 6px; }
+.lp-orig { font-size: 11px; color: #B0BEC5; text-decoration: line-through; }
+.lp-final { font-size: 15px; font-weight: 800; color: var(--navy); }
+.lp-disc { font-size: 10px; color: var(--green); }
+
+/* ── Driver card ────────────────────────────────────────────────────────── */
+.driver-card {
+  background: linear-gradient(135deg, #EAF4F9 0%, #F0F8FF 100%);
+  border: 1.5px solid #AED6F1; border-radius: 10px; padding: 13px;
+  display: flex; align-items: center; gap: 12px;
+}
+.driver-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.driver-info .d-name { font-size: 14px; font-weight: 700; color: var(--navy); }
+.driver-info .d-plate { font-size: 12px; color: var(--gray5); margin-top: 2px; font-weight: 600; }
+.driver-info .d-vehicle { font-size: 11px; color: var(--gray4); margin-top: 1px; }
+.driver-status { margin-left: auto; text-align: right; flex-shrink: 0; }
+.ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.ds-boarded  { background: #E8F8F0; color: var(--green); }
+.ds-arrived  { background: #F4ECF7; color: var(--purple); }
+.ds-assigned { background: #EEF4FA; color: var(--navy); }
+.ds-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.driver-contact-row { display: flex; gap: 8px; margin-top: 10px; }
+.contact-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid; text-decoration: none; transition: all 0.15s;
+}
+.contact-call { background: #fff; color: var(--navy); border-color: var(--gray2); }
+.contact-whatsapp { background: #E8F8F0; color: #1E8449; border-color: #A9DFBF; }
+.contact-btn svg { width: 14px; height: 14px; fill: currentColor; }
+.no-driver-box {
+  border: 1.5px dashed var(--gray3); border-radius: 10px;
+  padding: 16px; text-align: center;
+}
+.no-driver-box svg { width: 28px; height: 28px; fill: var(--gray3); margin-bottom: 6px; }
+.no-driver-box .nd-title { font-size: 13px; font-weight: 600; color: var(--gray4); }
+.no-driver-box .nd-sub { font-size: 11px; color: var(--gray4); margin-top: 3px; }
+
+/* ── Price summary ──────────────────────────────────────────────────────── */
+.price-rows { display: flex; flex-direction: column; gap: 8px; }
+.price-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.price-row .pr-l { color: var(--gray5); }
+.price-row .pr-v { font-weight: 600; color: var(--dark); }
+.price-row .pr-v.disc { color: var(--green); }
+.price-divider { height: 1px; background: var(--gray2); margin: 4px 0; }
+.price-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 10px; border-top: 1.5px solid var(--gray2); margin-top: 4px;
+}
+.pt-label { font-size: 12px; font-weight: 700; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.5px; }
+.pt-right { text-align: right; }
+.pt-orig { font-size: 11px; color: #B0BEC5; text-decoration: line-through; }
+.pt-final { font-size: 20px; font-weight: 800; color: var(--navy); }
+.pt-saved { font-size: 11px; color: var(--green); }
+
+/* ── Consent box ────────────────────────────────────────────────────────── */
+.consent-box {
+  background: #F0F8FF; border: 1px solid #AED6F1; border-radius: 8px;
+  padding: 11px 13px;
+}
+.consent-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.consent-top svg { width: 15px; height: 15px; fill: var(--green); flex-shrink: 0; }
+.consent-top span { font-size: 12px; font-weight: 700; color: #1A6F8A; }
+.consent-detail { font-size: 11px; color: #5A8E9F; line-height: 1.5; }
+.consent-detail a { color: var(--teal); text-decoration: none; }
+
+/* ── QR Ticket ──────────────────────────────────────────────────────────── */
+.qr-card {
+  background: linear-gradient(135deg, var(--navy) 0%, #2C5282 100%);
+  border-radius: var(--r); padding: 18px 16px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.qr-title { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.qr-box {
+  background: #fff; border-radius: 10px; padding: 12px;
+  width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+/* Simple SVG QR placeholder */
+.qr-box svg { width: 126px; height: 126px; }
+.qr-ref { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 2px; margin-bottom: 3px; }
+.qr-sub { font-size: 11px; color: rgba(255,255,255,0.5); }
+.qr-scan-note { margin-top: 10px; font-size: 11px; color: rgba(255,255,255,0.45); }
+
+/* ── Action buttons ─────────────────────────────────────────────────────── */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.action-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 10px; border-radius: var(--r); border: 1.5px solid;
+  cursor: pointer; transition: all 0.15s; background: #fff; text-decoration: none;
+}
+.action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.action-btn svg { width: 22px; height: 22px; }
+.action-btn span { font-size: 12px; font-weight: 700; }
+.ab-edit   { border-color: #AED6F1; color: var(--teal); }
+.ab-edit svg { fill: var(--teal); }
+.ab-edit:hover { background: var(--teal-l); }
+.ab-cancel { border-color: #F5B7B1; color: var(--red); }
+.ab-cancel svg { fill: var(--red); }
+.ab-cancel:hover { background: #FDEDEC; }
+.ab-msg    { border-color: #D2B4DE; color: var(--purple); }
+.ab-msg svg { fill: var(--purple); }
+.ab-msg:hover { background: #F4ECF7; }
+.ab-download { border-color: #A9DFBF; color: var(--green); }
+.ab-download svg { fill: var(--green); }
+.ab-download:hover { background: #E8F8F0; }
+.cutoff-notice {
+  background: #FEF9E7; border: 1px solid #F9E4A0; border-radius: 8px;
+  padding: 10px 12px; display: flex; gap: 8px; margin-bottom: 12px; font-size: 12px; color: #7D5A10;
+}
+.cutoff-notice svg { width: 14px; height: 14px; fill: var(--amber); flex-shrink: 0; margin-top: 1px; }
+.btn-disabled { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+
+/* ── Message thread ─────────────────────────────────────────────────────── */
+.msg-thread { display: flex; flex-direction: column; gap: 10px; }
+.msg-bubble { max-width: 85%; }
+.msg-bubble.eo { align-self: flex-start; }
+.msg-bubble.pax { align-self: flex-end; }
+.mb-inner { padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
+.msg-bubble.eo .mb-inner { background: var(--gray1); border: 1px solid var(--gray2); color: var(--dark); border-radius: 4px 10px 10px 10px; }
+.msg-bubble.pax .mb-inner { background: var(--navy); color: #fff; border-radius: 10px 4px 10px 10px; }
+.mb-meta { font-size: 10px; color: var(--gray4); margin-top: 3px; }
+.msg-bubble.pax .mb-meta { text-align: right; }
+.mb-sender { font-size: 11px; font-weight: 700; color: var(--gray5); margin-bottom: 3px; }
+.msg-reply-box {
+  display: flex; gap: 8px; align-items: flex-end;
+  padding: 12px 16px; background: var(--gray1);
+  border-top: 1px solid var(--gray2); margin: 0 -16px -14px;
+}
+.msg-input {
+  flex: 1; border: 1.5px solid var(--gray2); border-radius: 20px;
+  padding: 9px 14px; font-size: 13px; outline: none;
+  font-family: inherit; background: #fff; resize: none;
+  line-height: 1.4; max-height: 80px;
+}
+.msg-input:focus { border-color: var(--teal); }
+.msg-send {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--navy); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background 0.15s;
+}
+.msg-send:hover { background: var(--teal); }
+.msg-send svg { width: 16px; height: 16px; fill: #fff; }
+
+/* ── Activity log ───────────────────────────────────────────────────────── */
+.activity { display: flex; flex-direction: column; }
+.act-item { display: flex; gap: 10px; padding-bottom: 12px; position: relative; }
+.act-item:not(:last-child)::before {
+  content: ''; position: absolute; left: 7px; top: 16px; bottom: 0;
+  width: 1.5px; background: var(--gray2);
+}
+.act-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+.act-dot.green { background: var(--green); }
+.act-dot.teal  { background: var(--teal); }
+.act-dot.amber { background: var(--amber); }
+.act-dot.gray  { background: var(--gray3); }
+.act-dot svg { width: 8px; height: 8px; fill: #fff; }
+.act-body .act-text { font-size: 12px; color: var(--dark); line-height: 1.4; }
+.act-body .act-time { font-size: 10px; color: var(--gray4); margin-top: 2px; }
+
+/* ── Tab nav ─────────────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex; background: #E8EEF4; border-radius: 10px;
+  padding: 3px; gap: 2px; margin-bottom: 14px;
+}
+.tab-item {
+  flex: 1; padding: 7px 6px; border-radius: 8px; text-align: center;
+  font-size: 12px; font-weight: 500; color: var(--gray5); cursor: pointer;
+  transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.tab-item.active { background: #fff; color: var(--navy); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.tab-item svg { width: 13px; height: 13px; fill: currentColor; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── Footer note ─────────────────────────────────────────────────────────── */
+.footer-note { text-align: center; font-size: 11px; color: var(--gray4); padding: 10px 0 30px; }
+.footer-note a { color: var(--teal); text-decoration: none; }
+
+/* ── Edit modal ─────────────────────────────────────────────────────────── */
+.modal-bg { position: fixed; inset: 0; background: rgba(10,20,40,0.6); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-bg.open { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 480px; max-height: 85vh;
+  overflow-y: auto;
+  transform: translateY(40px); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.modal-bg.open .modal-sheet { transform: translateY(0); }
+.sheet-head { padding: 16px 18px 12px; border-bottom: 1px solid var(--gray2); display: flex; align-items: flex-start; justify-content: space-between; }
+.sh-drag { width: 36px; height: 4px; background: var(--gray3); border-radius: 2px; margin: 0 auto 14px; }
+.sh-title { font-size: 15px; font-weight: 700; color: var(--navy); }
+.sh-sub { font-size: 12px; color: var(--gray4); margin-top: 2px; }
+.sheet-close { width: 28px; height: 28px; border-radius: 50%; background: var(--gray1); border: none; cursor: pointer; font-size: 14px; color: var(--gray5); display: flex; align-items: center; justify-content: center; }
+.sheet-close:hover { background: var(--gray2); }
+.sheet-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+label.fl { font-size: 11px; font-weight: 700; color: var(--gray5); text-transform: uppercase; letter-spacing: 0.5px; }
+.form-control { border: 1.5px solid var(--gray2); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--dark); background: #fff; outline: none; font-family: inherit; transition: border-color 0.2s; width: 100%; }
+.form-control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(46,134,171,0.12); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sheet-footer { padding: 12px 18px 20px; border-top: 1px solid var(--gray2); display: flex; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 16px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; justify-content: center; flex: 1; transition: all 0.15s; }
+.btn svg { width: 14px; height: 14px; fill: currentColor; }
+.btn-navy { background: var(--navy); color: #fff; }
+.btn-navy:hover { background: var(--teal); }
+.btn-ghost { background: #fff; color: var(--gray5); border: 1.5px solid var(--gray2); }
+.btn-ghost:hover { background: var(--gray1); }
+.btn-red { background: #fff; color: var(--red); border: 1.5px solid #F5B7B1; }
+.btn-red:hover { background: #FDEDEC; }
+
+/* ── Cancel confirm ─────────────────────────────────────────────────────── */
+.cancel-warning { background: #FDEDEC; border: 1px solid #F5B7B1; border-radius: 8px; padding: 11px 13px; font-size: 12px; color: #922B21; display: flex; gap: 8px; }
+.cancel-warning svg { width: 15px; height: 15px; fill: var(--red); flex-shrink: 0; margin-top: 1px; }
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray3); border-radius: 2px; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.card { animation: fadeUp 0.3s ease both; }
+.card:nth-child(2) { animation-delay: 0.05s; }
+.card:nth-child(3) { animation-delay: 0.10s; }
+.card:nth-child(4) { animation-delay: 0.15s; }
+.card:nth-child(5) { animation-delay: 0.20s; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════════════════════════ -->
+<div class="header">
+  <div class="header-top">
+    <div class="brand">
+      <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+      <span class="brand-name">TransitFlow</span>
+    </div>
+    <button class="help-btn"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg></button>
+  </div>
+  <div class="booking-hero">
+    <div class="hero-label">Your Booking</div>
+    <div class="hero-ref">TF-00421</div>
+    <div class="hero-event">APAC Summit 2026 · Bangkok</div>
+    <span class="status-pill">Confirmed · Paid</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     PAGE CONTENT
+════════════════════════════════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <!-- Guest Info -->
+  <div class="card">
+    <div class="guest-strip">
+      <div class="guest-avatar">SM</div>
+      <div>
+        <div class="guest-name">Sarah Mitchell</div>
+        <div class="guest-email">s.mitchell@corp.com · +44 7700 123456</div>
+        <div class="guest-badges">
+          <span class="badge b-confirmed">Confirmed</span>
+          <span class="badge b-stripe">Stripe</span>
+          <span class="badge b-paid">Paid</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('details')" id="tab-details">
+      <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.52 15.48 0 12.38 0 10.79 0 9.38.65 8.37 1.67L7 3H4c-1.1 0-2 .9-2 2v15c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+      Trip
+    </div>
+    <div class="tab-item" onclick="switchTab('driver')" id="tab-driver">
+      <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+      Driver
+    </div>
+    <div class="tab-item" onclick="switchTab('payment')" id="tab-payment">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+      Payment
+    </div>
+    <div class="tab-item" onclick="switchTab('messages')" id="tab-messages">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      Messages
+    </div>
+    <div class="tab-item" onclick="switchTab('log')" id="tab-log">
+      <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      Log
+    </div>
+  </div>
+
+  <!-- ── TAB: TRIP DETAILS ─────────────────────────────────────────────── -->
+  <div class="tab-content active" id="tc-details">
+
+    <!-- Outbound Leg -->
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon navy"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
+        <div><div class="ch-title">Outbound Transfer</div><div class="ch-sub">Airport → Hotel</div></div>
+        <div class="ch-badge"><span class="badge b-confirmed">Confirmed</span></div>
+      </div>
+      <div class="card-body" style="padding-bottom:0">
+        <div class="leg">
+          <div class="leg-body">
+            <div class="leg-row"><span class="lbl">From</span><span class="val">Suvarnabhumi Airport (BKK)</span></div>
+            <div class="leg-row"><span class="lbl">To</span><span class="val">Anantara Riverside Bangkok</span></div>
+            <div class="leg-row"><span class="lbl">Flight</span><span class="val">TG 311</span></div>
+            <div class="leg-row"><span class="lbl">Pickup</span><span class="val">14 Apr 2026 · 09:30</span></div>
+            <div class="leg-row"><span class="lbl">Passengers</span><span class="val">2 passengers · 2 bags</span></div>
+            <div class="leg-row"><span class="lbl">Vehicle</span><span class="val">Sedan (auto-assigned)</span></div>
+            <div style="margin-top:4px">
+              <div style="font-size:10px;font-weight:700;color:var(--gray4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Meeting Point</div>
+              <div class="meeting-point-pill">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <div><strong>Arrivals Hall — Gate 5</strong><br>Look for the TransitFlow desk with your name card</div>
+              </div>
+            </div>
+          </div>
+          <div class="leg-price-row">
+            <span class="lp-label">Leg price</span>
+            <div class="lp-price">
+              <span class="lp-orig">฿1,600</span>
+              <span class="lp-final">฿1,360</span>
+              <span class="lp-disc">VIP15</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px 16px 14px">
+        <div style="font-size:11px;color:var(--amber);font-weight:600;display:flex;align-items:center;gap:5px">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--amber)"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          Edit cut-off: 13 Apr 2026 at 21:30 — Changes allowed until then
+        </div>
+      </div>
+    </div>
+
+    <!-- Return Leg -->
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon teal"><svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg></div>
+        <div><div class="ch-title">Return Transfer</div><div class="ch-sub">Hotel → Airport</div></div>
+        <div class="ch-badge"><span class="badge b-confirmed">Confirmed</span></div>
+      </div>
+      <div class="card-body" style="padding-bottom:0">
+        <div class="leg">
+          <div class="leg-body">
+            <div class="leg-row"><span class="lbl">From</span><span class="val">Anantara Riverside Bangkok</span></div>
+            <div class="leg-row"><span class="lbl">To</span><span class="val">Suvarnabhumi Airport (BKK)</span></div>
+            <div class="leg-row"><span class="lbl">Flight</span><span class="val">TG 418</span></div>
+            <div class="leg-row"><span class="lbl">Pickup</span><span class="val">17 Apr 2026 · 11:00</span></div>
+            <div class="leg-row"><span class="lbl">Passengers</span><span class="val">2 passengers · 2 bags</span></div>
+            <div class="leg-row"><span class="lbl">Vehicle</span><span class="val">Sedan (auto-assigned)</span></div>
+            <div style="margin-top:4px">
+              <div style="font-size:10px;font-weight:700;color:var(--gray4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Meeting Point</div>
+              <div class="meeting-point-pill">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <div><strong>Hotel Lobby — Valet Drop-off</strong><br>Driver will be waiting at the main entrance</div>
+              </div>
+            </div>
+          </div>
+          <div class="leg-price-row">
+            <span class="lp-label">Leg price</span>
+            <div class="lp-price">
+              <span class="lp-orig">฿1,600</span>
+              <span class="lp-final">฿1,360</span>
+              <span class="lp-disc">VIP15</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px 16px 14px">
+        <div style="font-size:11px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:5px">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--green)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Edit cut-off passed — No further changes allowed for this leg
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Ticket -->
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon purple"><svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-4 2h2v2h-2zm2 0h2v2h-2z"/></svg></div>
+        <div><div class="ch-title">Boarding Pass</div><div class="ch-sub">Show this QR to your driver</div></div>
+      </div>
+      <div class="card-body">
+        <div class="qr-card">
+          <div class="qr-title">Scan to Board</div>
+          <!-- QR code SVG pattern (decorative placeholder) -->
+          <div class="qr-box">
+            <svg viewBox="0 0 126 126" xmlns="http://www.w3.org/2000/svg">
+              <rect width="126" height="126" fill="white"/>
+              <!-- Finder patterns -->
+              <rect x="4" y="4" width="34" height="34" fill="black" rx="2"/>
+              <rect x="8" y="8" width="26" height="26" fill="white" rx="1"/>
+              <rect x="12" y="12" width="18" height="18" fill="black" rx="1"/>
+              <rect x="88" y="4" width="34" height="34" fill="black" rx="2"/>
+              <rect x="92" y="8" width="26" height="26" fill="white" rx="1"/>
+              <rect x="96" y="12" width="18" height="18" fill="black" rx="1"/>
+              <rect x="4" y="88" width="34" height="34" fill="black" rx="2"/>
+              <rect x="8" y="92" width="26" height="26" fill="white" rx="1"/>
+              <rect x="12" y="96" width="18" height="18" fill="black" rx="1"/>
+              <!-- Data modules (decorative) -->
+              <rect x="44" y="4" width="6" height="6" fill="black"/>
+              <rect x="54" y="4" width="6" height="6" fill="black"/>
+              <rect x="44" y="14" width="6" height="6" fill="black"/>
+              <rect x="64" y="4" width="6" height="6" fill="black"/>
+              <rect x="74" y="4" width="6" height="6" fill="black"/>
+              <rect x="64" y="14" width="6" height="6" fill="black"/>
+              <rect x="54" y="24" width="6" height="6" fill="black"/>
+              <rect x="74" y="24" width="6" height="6" fill="black"/>
+              <rect x="44" y="34" width="6" height="6" fill="black"/>
+              <rect x="64" y="34" width="6" height="6" fill="black"/>
+              <rect x="74" y="34" width="6" height="6" fill="black"/>
+              <rect x="4" y="44" width="6" height="6" fill="black"/>
+              <rect x="14" y="44" width="6" height="6" fill="black"/>
+              <rect x="24" y="44" width="6" height="6" fill="black"/>
+              <rect x="44" y="44" width="6" height="6" fill="black"/>
+              <rect x="54" y="44" width="6" height="6" fill="black"/>
+              <rect x="74" y="44" width="6" height="6" fill="black"/>
+              <rect x="84" y="44" width="6" height="6" fill="black"/>
+              <rect x="104" y="44" width="6" height="6" fill="black"/>
+              <rect x="114" y="44" width="6" height="6" fill="black"/>
+              <rect x="4" y="54" width="6" height="6" fill="black"/>
+              <rect x="24" y="54" width="6" height="6" fill="black"/>
+              <rect x="44" y="54" width="6" height="6" fill="black"/>
+              <rect x="64" y="54" width="6" height="6" fill="black"/>
+              <rect x="84" y="54" width="6" height="6" fill="black"/>
+              <rect x="104" y="54" width="6" height="6" fill="black"/>
+              <rect x="4" y="64" width="6" height="6" fill="black"/>
+              <rect x="14" y="64" width="6" height="6" fill="black"/>
+              <rect x="34" y="64" width="6" height="6" fill="black"/>
+              <rect x="54" y="64" width="6" height="6" fill="black"/>
+              <rect x="74" y="64" width="6" height="6" fill="black"/>
+              <rect x="94" y="64" width="6" height="6" fill="black"/>
+              <rect x="114" y="64" width="6" height="6" fill="black"/>
+              <rect x="4" y="74" width="6" height="6" fill="black"/>
+              <rect x="34" y="74" width="6" height="6" fill="black"/>
+              <rect x="54" y="74" width="6" height="6" fill="black"/>
+              <rect x="64" y="74" width="6" height="6" fill="black"/>
+              <rect x="84" y="74" width="6" height="6" fill="black"/>
+              <rect x="104" y="74" width="6" height="6" fill="black"/>
+              <rect x="44" y="84" width="6" height="6" fill="black"/>
+              <rect x="54" y="84" width="6" height="6" fill="black"/>
+              <rect x="74" y="84" width="6" height="6" fill="black"/>
+              <rect x="84" y="84" width="6" height="6" fill="black"/>
+              <rect x="114" y="84" width="6" height="6" fill="black"/>
+              <rect x="44" y="94" width="6" height="6" fill="black"/>
+              <rect x="64" y="94" width="6" height="6" fill="black"/>
+              <rect x="104" y="94" width="6" height="6" fill="black"/>
+              <rect x="44" y="104" width="6" height="6" fill="black"/>
+              <rect x="54" y="104" width="6" height="6" fill="black"/>
+              <rect x="74" y="104" width="6" height="6" fill="black"/>
+              <rect x="94" y="104" width="6" height="6" fill="black"/>
+              <rect x="114" y="104" width="6" height="6" fill="black"/>
+              <rect x="44" y="114" width="6" height="6" fill="black"/>
+              <rect x="64" y="114" width="6" height="6" fill="black"/>
+              <rect x="84" y="114" width="6" height="6" fill="black"/>
+              <rect x="104" y="114" width="6" height="6" fill="black"/>
+            </svg>
+          </div>
+          <div class="qr-ref">TF-00421</div>
+          <div class="qr-sub">Sarah Mitchell · Round Trip</div>
+          <div class="qr-scan-note">Your driver will scan this at pickup to confirm boarding</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consent record -->
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon green"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></div>
+        <div><div class="ch-title">Disclaimer Acknowledged</div><div class="ch-sub">Your consent is recorded</div></div>
+      </div>
+      <div class="card-body">
+        <div class="consent-box">
+          <div class="consent-top">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <span>Consent Recorded</span>
+          </div>
+          <div class="consent-detail">
+            Version 2.1 accepted on <strong>28 Mar 2026 at 14:22 UTC</strong> via the booking portal.<br>
+            You agreed that TransitFlow and the Event Organizer act as coordinators only and accept no liability for transport incidents.<br><br>
+            <a href="#">View full disclaimer text →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manage booking -->
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon amber"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div>
+        <div><div class="ch-title">Manage Booking</div><div class="ch-sub">Edit or cancel your transfer</div></div>
+      </div>
+      <div class="card-body">
+        <div class="cutoff-notice">
+          <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          <span>Return leg cut-off has passed — only your <strong>outbound leg</strong> can still be edited or cancelled. Changes close on <strong>13 Apr 21:30</strong>.</span>
+        </div>
+        <div class="action-grid">
+          <a class="action-btn ab-edit" onclick="openEdit()">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <span>Edit Outbound</span>
+          </a>
+          <a class="action-btn ab-cancel" onclick="openCancel()">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+            <span>Cancel Outbound</span>
+          </a>
+          <a class="action-btn ab-msg" onclick="switchTab('messages')">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            <span>Message Organizer</span>
+          </a>
+          <a class="action-btn ab-download">
+            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            <span>Download PDF</span>
+          </a>
+        </div>
+        <div style="text-align:center;font-size:11px;color:var(--gray4)">Return leg locked — no changes permitted after cut-off</div>
+      </div>
+    </div>
+
+  </div><!-- /tc-details -->
+
+  <!-- ── TAB: DRIVER ────────────────────────────────────────────────────── -->
+  <div class="tab-content" id="tc-driver">
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon navy"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg></div>
+        <div><div class="ch-title">Outbound Driver</div><div class="ch-sub">14 Apr · TG 311 · 09:30 → Anantara</div></div>
+        <div class="ch-badge"><span class="ds-badge ds-boarded">Boarded</span></div>
+      </div>
+      <div class="card-body">
+        <div class="driver-card">
+          <div class="driver-avatar">KS</div>
+          <div class="driver-info">
+            <div class="d-name">Krit Sompong</div>
+            <div class="d-plate">🚗 กข 1234 · Bangkok</div>
+            <div class="d-vehicle">Sedan · Confirmed pickup</div>
+          </div>
+          <div class="driver-status">
+            <div class="ds-badge ds-boarded">Boarded</div>
+            <div style="font-size:10px;color:var(--gray4);margin-top:4px">09:38 ✓</div>
+          </div>
+        </div>
+        <div class="driver-contact-row">
+          <a class="contact-btn contact-call">
+            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            Call Driver
+          </a>
+          <a class="contact-btn contact-whatsapp">
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon teal"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg></div>
+        <div><div class="ch-title">Return Driver</div><div class="ch-sub">17 Apr · TG 418 · 11:00 → BKK</div></div>
+        <div class="ch-badge"><span class="badge b-pending">Not Yet Assigned</span></div>
+      </div>
+      <div class="card-body">
+        <div class="no-driver-box">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <div class="nd-title">Driver not yet assigned</div>
+          <div class="nd-sub">Your driver details will be emailed to you 24 hours before pickup on 16 Apr 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trip status flow -->
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon green"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></div>
+        <div><div class="ch-title">Live Trip Status</div><div class="ch-sub">Outbound · Updated in real time</div></div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:0;padding:8px 0">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center"><svg style="width:15px;height:15px;fill:#fff" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            <div style="font-size:10px;color:var(--green);font-weight:700">Assigned</div>
+          </div>
+          <div style="flex:1;height:2px;background:var(--green);margin-bottom:14px"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center"><svg style="width:15px;height:15px;fill:#fff" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            <div style="font-size:10px;color:var(--green);font-weight:700">Arrived</div>
+          </div>
+          <div style="flex:1;height:2px;background:var(--green);margin-bottom:14px"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(30,58,95,0.15)"><svg style="width:15px;height:15px;fill:#fff" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            <div style="font-size:10px;color:var(--navy);font-weight:700">Boarded ▶</div>
+          </div>
+          <div style="flex:1;height:2px;background:var(--gray2);margin-bottom:14px"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:32px;height:32px;border-radius:50%;border:2px solid var(--gray3);display:flex;align-items:center;justify-content:center"><span style="font-size:11px;color:var(--gray4)">4</span></div>
+            <div style="font-size:10px;color:var(--gray4)">Completed</div>
+          </div>
+        </div>
+        <div style="background:var(--gray1);border:1px solid var(--gray2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--gray5);margin-top:4px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px">🚗</span>
+          <span><strong>Driver is en route with all passengers boarded</strong> — status updated at 09:38 by Krit Sompong</span>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tc-driver -->
+
+  <!-- ── TAB: PAYMENT ───────────────────────────────────────────────────── -->
+  <div class="tab-content" id="tc-payment">
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon navy"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg></div>
+        <div><div class="ch-title">Payment Summary</div><div class="ch-sub">Round trip · APAC Summit 2026</div></div>
+        <div class="ch-badge"><span class="badge b-paid">Paid ✓</span></div>
+      </div>
+      <div class="card-body">
+        <div class="price-rows">
+          <div class="price-row"><span class="pr-l">→ Outbound (BKK → Anantara)</span><span class="pr-v">฿1,600</span></div>
+          <div class="price-row"><span class="pr-l" style="padding-left:10px;font-size:11px">VIP15 discount (−15%)</span><span class="pr-v disc">−฿240</span></div>
+          <div class="price-row"><span class="pr-l">← Return (Anantara → BKK)</span><span class="pr-v">฿1,600</span></div>
+          <div class="price-row"><span class="pr-l" style="padding-left:10px;font-size:11px">VIP15 discount (−15%)</span><span class="pr-v disc">−฿240</span></div>
+          <div class="price-divider"></div>
+          <div class="price-row"><span class="pr-l" style="font-weight:600">Total Savings</span><span class="pr-v disc" style="font-size:14px">−฿480</span></div>
+        </div>
+        <div class="price-total-row">
+          <div class="pt-label">Total Charged</div>
+          <div class="pt-right">
+            <div class="pt-orig">฿3,200</div>
+            <div class="pt-final">฿2,720</div>
+            <div class="pt-saved">You saved ฿480 with VIP15 🎉</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon teal"><svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg></div>
+        <div><div class="ch-title">Promo Code Applied</div><div class="ch-sub">Discount details</div></div>
+      </div>
+      <div class="card-body">
+        <div style="background:#F4ECF7;border:1px solid #D2B4DE;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:8px;background:#8E44AD;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:1px">%</div>
+          <div>
+            <div style="font-size:15px;font-weight:800;color:#6C3483;letter-spacing:1px">VIP15</div>
+            <div style="font-size:11px;color:#7D3C98;margin-top:2px">15% off per leg · Applied to both legs</div>
+            <div style="font-size:11px;color:#7D3C98">Total saved: <strong>฿480</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon green"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+        <div><div class="ch-title">Payment Received</div><div class="ch-sub">Stripe · 29 Mar 2026 at 22:47</div></div>
+        <div class="ch-badge"><span class="badge b-paid">Paid</span></div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:13px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Method</span><span style="font-weight:600">Stripe (Visa ···· 4242)</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Amount</span><span style="font-weight:700;color:var(--navy)">฿2,720</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Date</span><span style="font-weight:600">29 Mar 2026 · 22:47 UTC</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Receipt</span><span style="font-weight:600;color:var(--teal)">stripe.com/receipt/ch_3Qx…</span></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tc-payment -->
+
+  <!-- ── TAB: MESSAGES ─────────────────────────────────────────────────── -->
+  <div class="tab-content" id="tc-messages">
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon purple"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
+        <div><div class="ch-title">Messages</div><div class="ch-sub">Chat with the event organizer</div></div>
+      </div>
+      <div class="card-body" style="padding-bottom:0">
+        <div class="msg-thread">
+          <!-- EO message -->
+          <div class="msg-bubble eo">
+            <div class="mb-sender">Jamie Lee · Event Organizer</div>
+            <div class="mb-inner">Hi Sarah, just a quick note — your outbound driver Krit will be holding a TransitFlow sign at Gate 5. Please look out for him when you exit customs. Let me know if you have any questions!</div>
+            <div class="mb-meta">30 Mar 2026 · 10:15</div>
+          </div>
+          <!-- Passenger reply -->
+          <div class="msg-bubble pax">
+            <div class="mb-inner">Thank you Jamie! Really appreciate it. Will the driver also help with luggage?</div>
+            <div class="mb-meta">30 Mar 2026 · 11:02</div>
+          </div>
+          <!-- EO reply -->
+          <div class="msg-bubble eo">
+            <div class="mb-sender">Jamie Lee · Event Organizer</div>
+            <div class="mb-inner">Absolutely — Krit will assist with all luggage. You're all set, Sarah. Safe travels! ✈️</div>
+            <div class="mb-meta">30 Mar 2026 · 11:18</div>
+          </div>
+        </div>
+        <!-- Reply box -->
+        <div class="msg-reply-box">
+          <textarea class="msg-input" placeholder="Type a message…" rows="1"></textarea>
+          <button class="msg-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tc-messages -->
+
+  <!-- ── TAB: ACTIVITY LOG ──────────────────────────────────────────────── -->
+  <div class="tab-content" id="tc-log">
+    <div class="card">
+      <div class="card-header">
+        <div class="ch-icon teal"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></div>
+        <div><div class="ch-title">Activity Log</div><div class="ch-sub">Full timeline of your booking</div></div>
+      </div>
+      <div class="card-body">
+        <div class="activity">
+          <div class="act-item">
+            <div class="act-dot green"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Driver marked passengers Boarded</strong> — Krit Sompong updated status via Driver Magic Link</div>
+              <div class="act-time">14 Apr 2026 · 09:38</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot teal"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Driver Arrived at pickup point</strong> — Krit Sompong, Gate 5 · Arrivals Hall</div>
+              <div class="act-time">14 Apr 2026 · 09:24</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot green"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>24-hour pickup reminder sent</strong> — Email with driver details, meeting point, and disclaimer recap</div>
+              <div class="act-time">13 Apr 2026 · 09:30</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot teal"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Driver assigned</strong> — Krit Sompong, Sedan, กข 1234 BKK · Magic Link sent via SMS</div>
+              <div class="act-time">12 Apr 2026 · 14:05</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot green"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Booking confirmed</strong> by Jamie Lee (Event Organizer) · Both legs confirmed</div>
+              <div class="act-time">30 Mar 2026 · 09:14</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot teal"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Stripe payment received</strong> — ฿2,720 charged to Visa ···· 4242</div>
+              <div class="act-time">29 Mar 2026 · 22:47</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot amber"><svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Promo code VIP15 applied</strong> — 15% discount, ฿480 saved across both legs</div>
+              <div class="act-time">28 Mar 2026 · 14:25</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot green"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Disclaimer v2.1 accepted</strong> — You agreed to the liability notice at 14:22 UTC</div>
+              <div class="act-time">28 Mar 2026 · 14:22</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-dot gray"></div>
+            <div class="act-body">
+              <div class="act-text"><strong>Booking created</strong> — Round trip, BKK ↔ Anantara, submitted via booking portal</div>
+              <div class="act-time">28 Mar 2026 · 14:20</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tc-log -->
+
+  <div class="footer-note">
+    Powered by <strong>TransitFlow</strong> · <a href="#">Help & FAQs</a> · <a href="#">Disclaimer</a><br>
+    This page is accessible only via your personal magic link and will expire after your last trip completes.
+  </div>
+
+</div><!-- /page-wrap -->
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     EDIT MODAL
+════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="editModal" onclick="handleModalClick(event,'editModal')">
+  <div class="modal-sheet">
+    <div style="padding:12px 0 0;"><div class="sh-drag"></div></div>
+    <div class="sheet-head">
+      <div><div class="sh-title">Edit Outbound Leg</div><div class="sh-sub">TF-00421 · BKK → Anantara · 14 Apr</div></div>
+      <button class="sheet-close" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="form-group">
+        <label class="fl">Airport</label>
+        <select class="form-control">
+          <option selected>Suvarnabhumi (BKK)</option>
+          <option>Don Mueang (DMK)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="fl">Hotel</label>
+        <select class="form-control">
+          <option selected>Anantara Riverside</option>
+          <option>Centara Grand</option>
+          <option>Lebua at State Tower</option>
+          <option>Mandarin Oriental</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="fl">Flight Number</label>
+          <input type="text" class="form-control" value="TG 311"/>
+        </div>
+        <div class="form-group">
+          <label class="fl">Pickup Time</label>
+          <input type="datetime-local" class="form-control" value="2026-04-14T09:30"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="fl">Passengers</label>
+          <input type="number" class="form-control" value="2" min="1" max="20"/>
+        </div>
+        <div class="form-group">
+          <label class="fl">Luggage</label>
+          <input type="number" class="form-control" value="2" min="0" max="20"/>
+        </div>
+      </div>
+      <div style="background:var(--teal-l);border:1px solid #AED6F1;border-radius:8px;padding:10px 12px;font-size:12px;color:#1A6F8A;display:flex;gap:7px">
+        <svg style="width:14px;height:14px;fill:#1A6F8A;flex-shrink:0;margin-top:1px" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        Changes will trigger vehicle re-allocation. Your price will be recalculated if passenger or luggage counts change.
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn btn-navy" onclick="saveEdit()">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     CANCEL MODAL
+════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="cancelModal" onclick="handleModalClick(event,'cancelModal')">
+  <div class="modal-sheet">
+    <div style="padding:12px 0 0;"><div class="sh-drag"></div></div>
+    <div class="sheet-head">
+      <div><div class="sh-title">Cancel Outbound Leg</div><div class="sh-sub">TF-00421 · BKK → Anantara · 14 Apr</div></div>
+      <button class="sheet-close" onclick="closeModal('cancelModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="cancel-warning">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+        <span>This will <strong>cancel your outbound leg only</strong>. Your return leg (17 Apr) will remain active. This action cannot be undone after the cut-off time.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;padding:4px 0">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Leg being cancelled</span><span style="font-weight:600">BKK → Anantara · 14 Apr</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Leg amount</span><span style="font-weight:700;color:var(--navy)">฿1,360</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Refund policy</span><span style="font-weight:600;color:var(--green)">Full refund to Stripe</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray5)">Processing time</span><span style="font-weight:600">3–5 business days</span></div>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-ghost" onclick="closeModal('cancelModal')">Keep Booking</button>
+      <button class="btn btn-red" onclick="confirmCancel()">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+        Yes, Cancel Outbound
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.getElementById('tc-' + name).classList.add('active');
+  }
+  function openEdit()   { document.getElementById('editModal').classList.add('open'); }
+  function openCancel() { document.getElementById('cancelModal').classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  function handleModalClick(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+  function saveEdit() {
+    closeModal('editModal');
+    setTimeout(() => alert('Outbound leg updated. Vehicle re-allocation will run automatically.'), 200);
+  }
+  function confirmCancel() {
+    closeModal('cancelModal');
+    setTimeout(() => alert('Outbound leg cancelled. Refund of ฿1,360 initiated to your Stripe card.'), 200);
+  }
+</script>
+</body>
+</html>

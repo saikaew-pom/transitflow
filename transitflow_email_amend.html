@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransitFlow — Guest Email & Booking Amendment</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy:   #1E3A5F;
+    --navy2:  #162d4a;
+    --teal:   #2E86AB;
+    --teal2:  #247596;
+    --sky:    #E8F4FD;
+    --green:  #27AE60;
+    --green-bg:#E8F8EF;
+    --amber:  #F39C12;
+    --amber-bg:#FEF6E4;
+    --red:    #E74C3C;
+    --red-bg: #FDECEA;
+    --gray0:  #F8F9FA;
+    --gray1:  #F1F3F5;
+    --gray2:  #E9ECEF;
+    --gray3:  #DEE2E6;
+    --gray5:  #ADB5BD;
+    --gray7:  #495057;
+    --gray9:  #212529;
+    --radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,.08);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,.15);
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray1); color: var(--gray9); font-size: 14px; min-height: 100vh; }
+
+  /* ── Top bar (simulated email client) ─────────────── */
+  .app-chrome { background: #fff; border-bottom: 1px solid var(--gray3); padding: 0 24px; display: flex; align-items: center; height: 52px; gap: 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .chrome-logo { font-size: 16px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; }
+  .chrome-logo span { color: var(--teal); }
+  .chrome-tab { padding: 6px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; background: transparent; color: var(--gray7); transition: all .15s; display: flex; align-items: center; gap: 7px; }
+  .chrome-tab.active { background: var(--sky); color: var(--teal); }
+  .chrome-tab:hover:not(.active) { background: var(--gray1); }
+  .chrome-spacer { flex: 1; }
+  .step-indicator { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .si-step { display: flex; align-items: center; gap: 6px; color: var(--gray5); }
+  .si-step.done { color: var(--green); }
+  .si-step.active { color: var(--teal); font-weight: 700; }
+  .si-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--gray3); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+  .si-step.done .si-dot { background: var(--green); border-color: var(--green); color: #fff; }
+  .si-step.active .si-dot { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .si-arrow { color: var(--gray3); font-size: 12px; }
+
+  /* ── Layout ─────────────────────────────────────────── */
+  .layout { display: flex; min-height: calc(100vh - 52px); }
+
+  /* ── Left: Email Client Panel ──────────────────────── */
+  .email-panel { width: 520px; background: #fff; border-right: 1px solid var(--gray3); display: flex; flex-direction: column; flex-shrink: 0; }
+  .email-topbar { padding: 14px 20px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 10px; }
+  .email-topbar-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+  .email-topbar-sub { font-size: 12px; color: var(--gray5); }
+  .inbox-list { overflow-y: auto; flex: 1; }
+
+  .inbox-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--gray2); cursor: pointer; transition: background .12s; position: relative; }
+  .inbox-row:hover { background: var(--gray0); }
+  .inbox-row.selected { background: var(--sky); border-left: 3px solid var(--teal); }
+  .inbox-row.unread .ir-subject { font-weight: 700; color: var(--gray9); }
+  .inbox-row .unread-dot { position: absolute; top: 18px; left: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+  .ir-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; margin-top: 2px; }
+  .ir-body { flex: 1; min-width: 0; }
+  .ir-from { font-size: 12.5px; font-weight: 600; color: var(--navy); margin-bottom: 2px; }
+  .ir-subject { font-size: 13px; color: var(--gray7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .ir-preview { font-size: 11.5px; color: var(--gray5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ir-time { font-size: 11px; color: var(--gray5); flex-shrink: 0; margin-top: 2px; white-space: nowrap; }
+
+  /* ── Right: View Panel ─────────────────────────────── */
+  .view-panel { flex: 1; overflow-y: auto; background: var(--gray0); }
+
+  /* ── View states ─────────────────────────────────────── */
+  .view-state { display: none; }
+  .view-state.active { display: block; }
+
+  /* ── Email Viewer ────────────────────────────────────── */
+  .email-viewer { max-width: 680px; margin: 28px auto; }
+  .ev-header { background: #fff; border-radius: var(--radius) var(--radius) 0 0; border: 1px solid var(--gray3); padding: 20px 24px; border-bottom: none; }
+  .ev-subject { font-size: 19px; font-weight: 700; color: var(--navy); margin-bottom: 14px; }
+  .ev-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .ev-from-info { display: flex; align-items: center; gap: 10px; }
+  .ev-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; background: var(--teal); flex-shrink: 0; }
+  .ev-from-name { font-size: 13.5px; font-weight: 700; color: var(--gray9); }
+  .ev-from-addr { font-size: 12px; color: var(--gray5); margin-top: 1px; }
+  .ev-date { font-size: 12px; color: var(--gray5); white-space: nowrap; }
+  .ev-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray2); }
+
+  /* ── Email HTML Body ─────────────────────────────────── */
+  .email-body-wrap { background: #fff; border: 1px solid var(--gray3); border-top: none; border-radius: 0 0 var(--radius) var(--radius); overflow: hidden; }
+  .email-html { background: #f4f6f9; padding: 30px 20px; }
+
+  /* Inner email design */
+  .mail-container { max-width: 560px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif; }
+  .mail-header { background: linear-gradient(135deg, #1E3A5F, #2E86AB); border-radius: 12px 12px 0 0; padding: 28px 32px; text-align: center; }
+  .mail-logo { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -.3px; margin-bottom: 6px; }
+  .mail-logo span { color: #5be3a6; }
+  .mail-tag { font-size: 11px; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: 1px; }
+  .mail-body { background: #fff; border-radius: 0 0 12px 12px; padding: 32px; border: 1px solid #e0e6ed; border-top: none; }
+  .mail-greeting { font-size: 17px; font-weight: 700; color: #1E3A5F; margin-bottom: 10px; }
+  .mail-intro { font-size: 14px; color: #555; line-height: 1.7; margin-bottom: 24px; }
+  .mail-booking-card { background: #f8f9fa; border-radius: 10px; border: 1px solid #e0e6ed; padding: 20px; margin-bottom: 24px; }
+  .mbc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #999; margin-bottom: 14px; }
+  .mbc-ref { font-size: 22px; font-weight: 900; color: #1E3A5F; letter-spacing: 1px; margin-bottom: 14px; }
+  .mbc-row { display: flex; gap: 16px; margin-bottom: 12px; }
+  .mbc-field { flex: 1; }
+  .mbc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #aaa; margin-bottom: 3px; }
+  .mbc-val { font-size: 13.5px; font-weight: 600; color: #1E3A5F; }
+  .mbc-divider { border: none; border-top: 1px dashed #ddd; margin: 14px 0; }
+  .mbc-price-row { display: flex; justify-content: space-between; align-items: center; }
+  .mbc-price-label { font-size: 13px; font-weight: 700; color: #555; }
+  .mbc-price-val { font-size: 20px; font-weight: 900; color: #27AE60; }
+  .mail-cta-wrap { text-align: center; margin-bottom: 24px; }
+  .mail-cta-main { display: inline-block; background: #2E86AB; color: #fff; padding: 16px 40px; border-radius: 10px; font-size: 15px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 16px rgba(46,134,171,.3); cursor: pointer; border: none; font-family: inherit; transition: all .2s; }
+  .mail-cta-main:hover { background: #247596; }
+  .mail-cta-amend { display: inline-block; background: #fff; color: #1E3A5F; padding: 13px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; border: 2px solid #1E3A5F; margin-left: 10px; cursor: pointer; font-family: inherit; transition: all .2s; }
+  .mail-cta-amend:hover { background: #f0f4f8; }
+  .mail-info-box { background: #E8F4FD; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 10px; font-size: 13px; color: #1E3A5F; line-height: 1.6; border-left: 3px solid #2E86AB; }
+  .mail-cutoff-warn { background: #FEF6E4; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 10px; font-size: 13px; color: #8B5E04; line-height: 1.6; border-left: 3px solid #F39C12; }
+  .mail-footer { text-align: center; padding-top: 20px; font-size: 11px; color: #bbb; line-height: 1.8; }
+
+  /* ── Amendment Portal (right panel state) ────────────── */
+  .amend-portal { max-width: 640px; margin: 28px auto; }
+  .ap-header { background: linear-gradient(135deg, var(--navy), var(--teal)); border-radius: var(--radius); padding: 24px 28px; color: #fff; margin-bottom: 20px; }
+  .ap-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,.55); margin-bottom: 8px; }
+  .ap-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .ap-ref { font-size: 13px; color: rgba(255,255,255,.65); display: flex; align-items: center; gap: 12px; }
+  .ap-status { background: rgba(91,227,166,.2); color: #5be3a6; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+
+  /* ── Leg Cards ───────────────────────────────────────── */
+  .leg-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--gray3); margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow); }
+  .leg-head { padding: 14px 20px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; justify-content: space-between; background: var(--gray0); }
+  .leg-head-title { font-size: 14px; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+  .leg-body { padding: 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label { font-size: 11.5px; font-weight: 700; color: var(--gray7); text-transform: uppercase; letter-spacing: .4px; }
+  .form-input, .form-select { border: 1.5px solid var(--gray3); border-radius: 6px; padding: 9px 12px; font-size: 13.5px; color: var(--gray9); background: #fff; outline: none; font-family: inherit; transition: border .15s; width: 100%; }
+  .form-input:focus, .form-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(46,134,171,.12); }
+  .form-input.changed { border-color: var(--amber); background: var(--amber-bg); }
+  .counter-row { display: flex; align-items: center; gap: 0; }
+  .counter-btn { width: 34px; height: 38px; border: 1.5px solid var(--gray3); background: var(--gray1); cursor: pointer; font-size: 16px; font-weight: 700; color: var(--gray7); font-family: inherit; transition: all .15s; display: flex; align-items: center; justify-content: center; }
+  .counter-btn:first-child { border-radius: 6px 0 0 6px; }
+  .counter-btn:last-child { border-radius: 0 6px 6px 0; }
+  .counter-btn:hover { background: var(--gray2); color: var(--navy); }
+  .counter-val { border: 1.5px solid var(--gray3); border-left: none; border-right: none; padding: 0 18px; height: 38px; display: flex; align-items: center; font-size: 15px; font-weight: 700; color: var(--navy); min-width: 52px; justify-content: center; background: #fff; }
+
+  /* ── Reallocation Warning ────────────────────────────── */
+  .realloc-banner { display: none; background: var(--amber-bg); border: 1px solid #F7D08A; border-radius: 7px; padding: 12px 16px; font-size: 12.5px; color: #8B5E04; display: flex; gap: 10px; align-items: flex-start; margin-top: 4px; }
+  .realloc-banner.show { display: flex; }
+
+  /* ── Price Summary ───────────────────────────────────── */
+  .price-summary { background: var(--sky); border: 1px solid #C5E2F6; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px; }
+  .ps-title { font-size: 12px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+  .ps-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13.5px; color: var(--gray7); }
+  .ps-row.total { border-top: 1px solid #C5E2F6; margin-top: 6px; padding-top: 12px; font-weight: 700; font-size: 15px; color: var(--navy); }
+  .ps-row .ps-delta { font-size: 12px; font-weight: 700; color: var(--amber); margin-left: 6px; }
+  .ps-row .ps-delta.up { color: var(--red); }
+  .ps-row .ps-delta.down { color: var(--green); }
+
+  /* ── Buttons ─────────────────────────────────────────── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 7px; font-size: 13.5px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: all .15s; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: var(--teal2); }
+  .btn-outline { background: #fff; color: var(--gray7); border: 1.5px solid var(--gray3); }
+  .btn-outline:hover { background: var(--gray1); border-color: var(--navy); color: var(--navy); }
+  .btn-danger { background: #fff; color: var(--red); border: 1.5px solid #F5C6C2; }
+  .btn-danger:hover { background: var(--red-bg); }
+  .action-bar { display: flex; gap: 10px; align-items: center; }
+
+  /* ── Confirm modal ───────────────────────────────────── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .modal { background: #fff; border-radius: 14px; padding: 28px; max-width: 440px; width: 90%; box-shadow: var(--shadow-lg); transform: scale(.95) translateY(10px); transition: transform .2s; }
+  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+  .modal-icon { font-size: 40px; text-align: center; margin-bottom: 14px; }
+  .modal-title { font-size: 18px; font-weight: 800; color: var(--navy); text-align: center; margin-bottom: 8px; }
+  .modal-sub { font-size: 13.5px; color: var(--gray7); text-align: center; line-height: 1.6; margin-bottom: 20px; }
+  .modal-changes { background: var(--gray0); border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+  .mc-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--gray2); font-size: 13px; }
+  .mc-row:last-child { border-bottom: none; }
+  .mc-label { color: var(--gray7); }
+  .mc-change { display: flex; align-items: center; gap: 8px; }
+  .mc-old { color: var(--gray5); text-decoration: line-through; font-size: 12px; }
+  .mc-new { color: var(--navy); font-weight: 700; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+
+  /* ── Success state ───────────────────────────────────── */
+  .success-view { display: none; }
+  .success-view.show { display: block; }
+  .success-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--gray3); padding: 40px 32px; text-align: center; max-width: 520px; margin: 40px auto; box-shadow: var(--shadow-lg); }
+  .sc-icon { font-size: 56px; margin-bottom: 20px; display: block; }
+  .sc-title { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .sc-sub { font-size: 14px; color: var(--gray7); line-height: 1.7; margin-bottom: 24px; }
+  .sc-email-note { background: var(--sky); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--teal); font-weight: 600; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+
+  /* ── Badge ───────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-teal  { background: var(--sky); color: var(--teal); }
+
+  /* ── Toast ───────────────────────────────────────────── */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--navy); color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 13.5px; font-weight: 500; z-index: 9999; transition: transform .35s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 8px 30px rgba(0,0,0,.2); pointer-events: none; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══ TOP APP BAR ══════════════════════════════════════ -->
+<div class="app-chrome">
+  <div class="chrome-logo">📧 <span style="color:var(--navy);">Transit</span><span>Flow</span> <span style="color:var(--gray5);font-weight:400;font-size:13px;">Mail & Booking Portal</span></div>
+  <div class="chrome-tab active" onclick="showView('email')">📬 Inbox</div>
+  <div class="chrome-tab" id="tab-amend" onclick="showView('amend')" style="display:none;">✏️ Amend Booking</div>
+  <div class="chrome-tab" id="tab-success" onclick="showView('success')" style="display:none;">✅ Confirmed</div>
+  <div class="chrome-spacer"></div>
+  <div class="step-indicator">
+    <div class="si-step active" id="stp1"><div class="si-dot">1</div>Email received</div>
+    <div class="si-arrow">›</div>
+    <div class="si-step" id="stp2"><div class="si-dot">2</div>Click amend link</div>
+    <div class="si-arrow">›</div>
+    <div class="si-step" id="stp3"><div class="si-dot">3</div>Edit & confirm</div>
+    <div class="si-arrow">›</div>
+    <div class="si-step" id="stp4"><div class="si-dot">4</div>Updated ✓</div>
+  </div>
+</div>
+
+<!-- ══ LAYOUT ══════════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- Left: Inbox -->
+  <div class="email-panel">
+    <div class="email-topbar">
+      <div>
+        <div class="email-topbar-title">📬 Inbox — james.whitfield@summit.org</div>
+        <div class="email-topbar-sub">3 messages · 1 unread</div>
+      </div>
+    </div>
+    <div class="inbox-list">
+
+      <!-- Booking Confirmation (selected) -->
+      <div class="inbox-row unread selected" onclick="selectEmail('confirmation')">
+        <div class="unread-dot"></div>
+        <div class="ir-avatar" style="background:#2E86AB;">TF</div>
+        <div class="ir-body">
+          <div class="ir-from">TransitFlow · APEC Summit 2026</div>
+          <div class="ir-subject">✅ Booking Confirmed — TF-2026-0041</div>
+          <div class="ir-preview">Your airport transfer is confirmed. View your booking, boarding pass and amend details below…</div>
+        </div>
+        <div class="ir-time">09:41 AM</div>
+      </div>
+
+      <!-- Reminder email -->
+      <div class="inbox-row" onclick="selectEmail('reminder')">
+        <div class="ir-avatar" style="background:#27AE60;">TF</div>
+        <div class="ir-body">
+          <div class="ir-from">TransitFlow · APEC Summit 2026</div>
+          <div class="ir-subject">⏰ Reminder: Your transfer is in 48 hours</div>
+          <div class="ir-preview">Your transport departs 13 Apr at 08:30. Your driver is Somchai P. Meeting point: Column 14…</div>
+        </div>
+        <div class="ir-time">Yesterday</div>
+      </div>
+
+      <!-- Amendment confirmed -->
+      <div class="inbox-row" id="amend-confirm-row" style="display:none;" onclick="selectEmail('amended')">
+        <div class="ir-avatar" style="background:#F39C12;">TF</div>
+        <div class="ir-body">
+          <div class="ir-from">TransitFlow · APEC Summit 2026</div>
+          <div class="ir-subject">✏️ Booking Amendment Confirmed — TF-2026-0041</div>
+          <div class="ir-preview">Your booking has been updated. 3 passengers · Pickup 09:15 · New total ฿3,570…</div>
+        </div>
+        <div class="ir-time">Just now</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Right: View panel -->
+  <div class="view-panel">
+
+    <!-- ══ EMAIL VIEW ══════════════════════════════════ -->
+    <div id="view-email" class="view-state active">
+      <div class="email-viewer">
+        <div class="ev-header">
+          <div class="ev-subject" id="ev-subject">✅ Booking Confirmed — TF-2026-0041</div>
+          <div class="ev-meta">
+            <div class="ev-from-info">
+              <div class="ev-avatar" id="ev-av">TF</div>
+              <div>
+                <div class="ev-from-name" id="ev-name">TransitFlow · APEC Summit 2026</div>
+                <div class="ev-from-addr">noreply@transitflow.io → james.whitfield@summit.org</div>
+              </div>
+            </div>
+            <div class="ev-date" id="ev-date">15 Mar 2026, 09:41 AM</div>
+          </div>
+          <div class="ev-actions">
+            <button class="btn btn-outline" style="font-size:12px;padding:6px 12px;" onclick="showToast('Reply composed.')">↩ Reply</button>
+            <button class="btn btn-outline" style="font-size:12px;padding:6px 12px;" onclick="showToast('Forwarded.')">→ Forward</button>
+            <button class="btn btn-outline" style="font-size:12px;padding:6px 12px;" onclick="showToast('Archived.')">🗃 Archive</button>
+          </div>
+        </div>
+
+        <!-- EMAIL HTML BODY: Confirmation -->
+        <div class="email-body-wrap" id="email-body-confirmation">
+          <div class="email-html">
+            <div class="mail-container">
+              <div class="mail-header">
+                <div class="mail-logo">Transit<span>Flow</span></div>
+                <div class="mail-tag">APEC Summit 2026 · Official Transport</div>
+              </div>
+              <div class="mail-body">
+                <div class="mail-greeting">Hi James, your booking is confirmed! 🎉</div>
+                <p class="mail-intro">Your airport transfer for <strong>APEC Summit 2026</strong> is all set. Please find your booking details below. You can view your boarding pass and amend your details anytime before the cut-off deadline.</p>
+
+                <div class="mail-booking-card">
+                  <div class="mbc-title">Booking Reference</div>
+                  <div class="mbc-ref">TF-2026-0041</div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Direction</div><div class="mbc-val">✈️ Airport → Hotel</div></div>
+                    <div class="mbc-field"><div class="mbc-label">Date</div><div class="mbc-val">13 Apr 2026</div></div>
+                  </div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">From</div><div class="mbc-val">Suvarnabhumi (BKK)</div></div>
+                    <div class="mbc-field"><div class="mbc-label">To</div><div class="mbc-val">Centara Grand</div></div>
+                  </div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Passengers</div><div class="mbc-val">2 adults</div></div>
+                    <div class="mbc-field"><div class="mbc-label">Luggage</div><div class="mbc-val">2 bags</div></div>
+                  </div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Flight No.</div><div class="mbc-val">TG 401</div></div>
+                    <div class="mbc-field"><div class="mbc-label">Arrival</div><div class="mbc-val">08:15</div></div>
+                  </div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Meeting Point</div><div class="mbc-val" style="color:var(--teal);">Column 14, Gate B</div></div>
+                    <div class="mbc-field"><div class="mbc-label">Promo Applied</div><div class="mbc-val" style="color:var(--green);">VIP15 (–15%)</div></div>
+                  </div>
+                  <div class="mbc-divider"></div>
+                  <div class="mbc-price-row">
+                    <div class="mbc-price-label">Total Paid</div>
+                    <div class="mbc-price-val">฿ 2,380</div>
+                  </div>
+                </div>
+
+                <div class="mail-info-box">
+                  ℹ️ <div>Your <strong>QR boarding pass</strong> is ready. Present it to your driver on the day. The driver will scan it to mark you as boarded.</div>
+                </div>
+
+                <div class="mail-cutoff-warn">
+                  ⏰ <div>You can amend your booking details (passengers, luggage, flight number) until <strong>12 Apr 2026 at 08:15</strong> (24 hours before your trip). After this time, amendments are locked.</div>
+                </div>
+
+                <div class="mail-cta-wrap">
+                  <button class="mail-cta-main" onclick="startAmend()">View Boarding Pass</button>
+                  <button class="mail-cta-amend" onclick="startAmend()">✏️ Amend Booking</button>
+                </div>
+
+                <div class="mail-footer">
+                  This email was sent to james.whitfield@summit.org on behalf of APEC Summit 2026.<br>
+                  TransitFlow · support@transitflow.io · <a href="#" style="color:#2E86AB;">Unsubscribe</a><br>
+                  <span style="color:#ddd;">─────────────────────────────────────────</span><br>
+                  Your booking link is personal. Do not forward this email to others.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMAIL HTML BODY: Reminder (hidden) -->
+        <div class="email-body-wrap" id="email-body-reminder" style="display:none;">
+          <div class="email-html">
+            <div class="mail-container">
+              <div class="mail-header" style="background:linear-gradient(135deg,#1d5c2e,#27AE60);">
+                <div class="mail-logo">Transit<span>Flow</span></div>
+                <div class="mail-tag">APEC Summit 2026 · Transport Reminder</div>
+              </div>
+              <div class="mail-body">
+                <div class="mail-greeting">⏰ Your transfer is in 48 hours, James!</div>
+                <p class="mail-intro">Just a friendly reminder — your airport pickup is coming up. Here's everything you need for the day.</p>
+                <div class="mail-booking-card">
+                  <div class="mbc-title">Your Trip Details</div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Date & Time</div><div class="mbc-val">13 Apr 2026 · 08:30</div></div>
+                    <div class="mbc-field"><div class="mbc-label">Meeting Point</div><div class="mbc-val" style="color:var(--teal);">Column 14, Gate B</div></div>
+                  </div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Your Driver</div><div class="mbc-val">Somchai P.</div></div>
+                    <div class="mbc-field"><div class="mbc-label">Vehicle</div><div class="mbc-val">Coach · TH-44-8123</div></div>
+                  </div>
+                  <div class="mbc-divider"></div>
+                  <div style="font-size:13px;color:#555;line-height:1.7;">📍 <strong>Look for the TransitFlow sign</strong> at Column 14 in the Arrivals Hall. Your driver will be holding a name board.</div>
+                </div>
+                <div class="mail-cta-wrap">
+                  <button class="mail-cta-main" onclick="showToast('Opening boarding pass…')">📱 Show Boarding Pass</button>
+                </div>
+                <div class="mail-footer">
+                  Amendment deadline has passed. Contact your organizer for urgent changes.<br>
+                  TransitFlow · support@transitflow.io
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMAIL HTML BODY: Amended Confirmation (hidden) -->
+        <div class="email-body-wrap" id="email-body-amended" style="display:none;">
+          <div class="email-html">
+            <div class="mail-container">
+              <div class="mail-header" style="background:linear-gradient(135deg,#7d4e00,#F39C12);">
+                <div class="mail-logo">Transit<span>Flow</span></div>
+                <div class="mail-tag">APEC Summit 2026 · Booking Amended</div>
+              </div>
+              <div class="mail-body">
+                <div class="mail-greeting">✏️ Your booking has been updated!</div>
+                <p class="mail-intro">Your amendment to booking <strong>TF-2026-0041</strong> has been confirmed. Here are your updated details.</p>
+                <div class="mail-booking-card">
+                  <div class="mbc-title">Updated Booking — TF-2026-0041</div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Passengers</div><div class="mbc-val" style="color:var(--amber);">3 adults <span style="font-size:11px;color:var(--gray5);">(was 2)</span></div></div>
+                    <div class="mbc-field"><div class="mbc-label">Luggage</div><div class="mbc-val" style="color:var(--amber);">3 bags <span style="font-size:11px;color:var(--gray5);">(was 2)</span></div></div>
+                  </div>
+                  <div class="mbc-row">
+                    <div class="mbc-field"><div class="mbc-label">Pickup Time</div><div class="mbc-val" style="color:var(--amber);">09:15 <span style="font-size:11px;color:var(--gray5);">(was 08:30)</span></div></div>
+                    <div class="mbc-field"><div class="mbc-label">Flight</div><div class="mbc-val" style="color:var(--amber);">TG 405 <span style="font-size:11px;color:var(--gray5);">(was TG 401)</span></div></div>
+                  </div>
+                  <div class="mbc-divider"></div>
+                  <div class="mbc-price-row">
+                    <div class="mbc-price-label">New Total</div>
+                    <div class="mbc-price-val">฿ 3,570</div>
+                  </div>
+                </div>
+                <div class="mail-info-box">✅ <div>Your vehicle has been <strong>automatically reallocated</strong> to accommodate 3 passengers. Your new boarding pass QR code is ready.</div></div>
+                <div class="mail-cta-wrap">
+                  <button class="mail-cta-main" onclick="showToast('Opening updated boarding pass…')">View Updated Boarding Pass</button>
+                </div>
+                <div class="mail-footer">TransitFlow · support@transitflow.io</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /email-viewer -->
+    </div><!-- /view-email -->
+
+    <!-- ══ AMEND VIEW ══════════════════════════════════ -->
+    <div id="view-amend" class="view-state">
+      <div class="amend-portal">
+
+        <div class="ap-header">
+          <div class="ap-eyebrow">🔗 Amendment Portal — Magic Link Access</div>
+          <div class="ap-title">Amend Booking TF-2026-0041</div>
+          <div class="ap-ref">
+            James Whitfield · james.whitfield@summit.org
+            <span class="ap-status">✓ Authenticated via link</span>
+          </div>
+        </div>
+
+        <!-- Cut-off warning -->
+        <div style="background:var(--amber-bg);border:1px solid #F7D08A;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#8B5E04;display:flex;gap:10px;align-items:flex-start;">
+          ⏰ <div>Amendment deadline: <strong>12 Apr 2026 at 08:15</strong>. After this time, changes are locked. You have <strong>28 days remaining</strong>.</div>
+        </div>
+
+        <!-- Leg 1 -->
+        <div class="leg-card">
+          <div class="leg-head">
+            <div class="leg-head-title">✈️ Leg 1 — Airport → Hotel</div>
+            <span class="badge badge-green">Confirmed</span>
+          </div>
+          <div class="leg-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Airport</label>
+                <select class="form-select">
+                  <option selected>BKK — Suvarnabhumi</option>
+                  <option>DMK — Don Mueang</option>
+                  <option>CNX — Chiang Mai</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hotel</label>
+                <select class="form-select">
+                  <option selected>Centara Grand CentralWorld</option>
+                  <option>Novotel Suvarnabhumi</option>
+                  <option>The Peninsula Bangkok</option>
+                  <option>Shangri-La Bangkok</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Flight Number</label>
+                <input class="form-input changed" id="flight-input" value="TG 405" oninput="onFieldChange()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Estimated Arrival</label>
+                <input class="form-input changed" id="arrival-input" type="time" value="09:00" oninput="onFieldChange()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Passengers</label>
+                <div class="counter-row">
+                  <button class="counter-btn" onclick="adjustCount('pax',-1)">−</button>
+                  <div class="counter-val" id="pax-val">3</div>
+                  <button class="counter-btn" onclick="adjustCount('pax',1)">+</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Luggage Bags</label>
+                <div class="counter-row">
+                  <button class="counter-btn" onclick="adjustCount('bags',-1)">−</button>
+                  <div class="counter-val" id="bags-val">3</div>
+                  <button class="counter-btn" onclick="adjustCount('bags',1)">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reallocation warning -->
+            <div class="realloc-banner show" id="realloc-warn">
+              ⚠️ <div>Adding a passenger may trigger <strong>vehicle reallocation</strong>. Your trip may be moved to a larger vehicle. The meeting point and driver may change. You'll receive a new confirmation email.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price Summary -->
+        <div class="price-summary">
+          <div class="ps-title">Updated Price Breakdown</div>
+          <div class="ps-row">
+            <span>Base fare (3 pax · 3 bags)</span>
+            <span>฿ 4,200</span>
+          </div>
+          <div class="ps-row">
+            <span>Promo code VIP15 (–15%)</span>
+            <span style="color:var(--green);">−฿ 630</span>
+          </div>
+          <div class="ps-row">
+            <span>Original amount paid</span>
+            <span style="color:var(--gray5);">฿ 2,380</span>
+          </div>
+          <div class="ps-row total">
+            <span>Amount due on update</span>
+            <span>฿ 1,190 <span class="ps-delta up">+฿ 1,190</span></span>
+          </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+          <button class="btn btn-primary" onclick="openConfirmModal()">✓ Confirm Amendment</button>
+          <button class="btn btn-outline" onclick="showView('email'); stepBack();">✕ Cancel Changes</button>
+          <div style="flex:1;"></div>
+          <button class="btn btn-danger" onclick="showToast('Cancel booking flow opened…')">🗑 Cancel Booking</button>
+        </div>
+      </div>
+    </div><!-- /view-amend -->
+
+    <!-- ══ SUCCESS VIEW ════════════════════════════════ -->
+    <div id="view-success" class="view-state">
+      <div class="success-card">
+        <span class="sc-icon">✅</span>
+        <div class="sc-title">Booking successfully amended!</div>
+        <p class="sc-sub">Your booking <strong>TF-2026-0041</strong> has been updated. The vehicle has been reallocated to accommodate <strong>3 passengers</strong>. A new confirmation email has been sent to <strong>james.whitfield@summit.org</strong>.</p>
+        <div class="sc-email-note">📧 Confirmation email sent — check your inbox</div>
+        <div style="background:var(--gray0);border-radius:8px;padding:16px;text-align:left;margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">What changed</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--gray7);">Passengers</span> <span><span style="color:var(--gray5);text-decoration:line-through;">2</span> → <strong style="color:var(--navy);">3</strong></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--gray7);">Luggage</span> <span><span style="color:var(--gray5);text-decoration:line-through;">2</span> → <strong style="color:var(--navy);">3</strong></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--gray7);">Flight</span> <span><span style="color:var(--gray5);text-decoration:line-through;">TG 401</span> → <strong style="color:var(--navy);">TG 405</strong></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--gray7);">Pickup time</span> <span><span style="color:var(--gray5);text-decoration:line-through;">08:30</span> → <strong style="color:var(--navy);">09:15</strong></span></div>
+            <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--gray2);margin-top:4px;"><span style="color:var(--gray7);">New total</span> <strong style="color:var(--green);">฿ 3,570</strong></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button class="btn btn-primary" onclick="viewAmendedEmail()">📧 View Confirmation Email</button>
+          <button class="btn btn-outline" onclick="showToast('Opening boarding pass…')">📱 View Boarding Pass</button>
+        </div>
+      </div>
+    </div><!-- /view-success -->
+
+  </div><!-- /view-panel -->
+</div><!-- /layout -->
+
+<!-- ══ CONFIRM MODAL ════════════════════════════════════ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-icon">✏️</div>
+    <div class="modal-title">Confirm your amendments</div>
+    <p class="modal-sub">Please review the changes before submitting. The vehicle will be automatically reallocated.</p>
+    <div class="modal-changes">
+      <div class="mc-row"><span class="mc-label">Passengers</span><div class="mc-change"><span class="mc-old">2</span> → <span class="mc-new">3</span></div></div>
+      <div class="mc-row"><span class="mc-label">Luggage</span><div class="mc-change"><span class="mc-old">2</span> → <span class="mc-new">3</span></div></div>
+      <div class="mc-row"><span class="mc-label">Flight</span><div class="mc-change"><span class="mc-old">TG 401</span> → <span class="mc-new">TG 405</span></div></div>
+      <div class="mc-row"><span class="mc-label">Arrival time</span><div class="mc-change"><span class="mc-old">08:15</span> → <span class="mc-new">09:00</span></div></div>
+      <div class="mc-row" style="border-top:2px solid var(--gray2);margin-top:4px;padding-top:8px;"><span class="mc-label" style="font-weight:700;">Amount due</span><div class="mc-change"><span class="mc-new" style="color:var(--red);">+฿ 1,190</span></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeConfirmModal()">← Go back</button>
+      <button class="btn btn-primary" onclick="submitAmendment()">✓ Confirm & Pay ฿1,190</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── View switching ─────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view-state').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.chrome-tab').forEach(t => t.classList.remove('active'));
+  if (id === 'email')   { document.querySelectorAll('.chrome-tab')[0].classList.add('active'); }
+  if (id === 'amend')   { document.getElementById('tab-amend').classList.add('active'); }
+  if (id === 'success') { document.getElementById('tab-success').classList.add('active'); }
+}
+
+// ── Email selection ────────────────────────────────────
+function selectEmail(type) {
+  document.querySelectorAll('.inbox-row').forEach(r => r.classList.remove('selected','unread'));
+  event.currentTarget.classList.add('selected');
+  ['email-body-confirmation','email-body-reminder','email-body-amended'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  const map = { confirmation: 'email-body-confirmation', reminder: 'email-body-reminder', amended: 'email-body-amended' };
+  document.getElementById(map[type]).style.display = 'block';
+  const subjects = {
+    confirmation: '✅ Booking Confirmed — TF-2026-0041',
+    reminder: '⏰ Reminder: Your transfer is in 48 hours',
+    amended: '✏️ Booking Amendment Confirmed — TF-2026-0041'
+  };
+  const dates = { confirmation: '15 Mar 2026, 09:41 AM', reminder: '14 Mar 2026, 08:00 AM', amended: '15 Mar 2026, ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) };
+  const colors = { confirmation: '#2E86AB', reminder: '#27AE60', amended: '#F39C12' };
+  document.getElementById('ev-subject').textContent = subjects[type];
+  document.getElementById('ev-date').textContent = dates[type];
+  document.getElementById('ev-av').style.background = colors[type];
+  showView('email');
+}
+
+// ── Start amend ────────────────────────────────────────
+function startAmend() {
+  document.getElementById('tab-amend').style.display = 'flex';
+  setStep(2);
+  showView('amend');
+}
+
+// ── Steps ──────────────────────────────────────────────
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('stp' + i);
+    el.className = 'si-step ' + (i < n ? 'done' : i === n ? 'active' : '');
+    el.querySelector('.si-dot').textContent = i < n ? '✓' : i;
+  });
+}
+function stepBack() { setStep(1); }
+
+// ── Counter ────────────────────────────────────────────
+let pax = 3, bags = 3;
+function adjustCount(type, delta) {
+  if (type === 'pax') {
+    pax = Math.max(1, Math.min(8, pax + delta));
+    document.getElementById('pax-val').textContent = pax;
+  } else {
+    bags = Math.max(0, Math.min(10, bags + delta));
+    document.getElementById('bags-val').textContent = bags;
+  }
+  onFieldChange();
+}
+
+// ── Field change ───────────────────────────────────────
+function onFieldChange() {
+  document.getElementById('realloc-warn').classList.toggle('show', pax > 2);
+}
+
+// ── Modal ──────────────────────────────────────────────
+function openConfirmModal() {
+  setStep(3);
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  setStep(2);
+}
+function submitAmendment() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  setStep(4);
+  // Show success
+  document.getElementById('tab-success').style.display = 'flex';
+  // Show amended email in inbox
+  document.getElementById('amend-confirm-row').style.display = 'flex';
+  showView('success');
+  showToast('✅ Booking amended. Confirmation email sent.');
+}
+
+// ── View amended email ─────────────────────────────────
+function viewAmendedEmail() {
+  showView('email');
+  document.querySelectorAll('.inbox-row').forEach(r => r.classList.remove('selected'));
+  document.getElementById('amend-confirm-row').classList.add('selected');
+  selectEmail('amended');
+}
+
+// ── Toast ──────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TransitFlow – EO Booking Dashboard</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: #1A1A2E; font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ──────────────────────────────────────────────────────────── */
+  .sidebar { width: 220px; min-width: 220px; background: #1E3A5F; display: flex; flex-direction: column; padding: 0; overflow-y: auto; }
+  .sidebar-logo { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-logo .logo-mark { display: flex; align-items: center; gap: 10px; }
+  .sidebar-logo .logo-icon { width: 32px; height: 32px; background: #2E86AB; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .sidebar-logo .logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .sidebar-logo .logo-text { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .sidebar-logo .logo-sub { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .sidebar-project { margin: 14px 12px 8px; background: rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-project label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 4px; }
+  .sidebar-project .project-name { font-size: 12px; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+  .sidebar-project .project-name svg { width: 12px; height: 12px; fill: rgba(255,255,255,0.4); }
+
+  .sidebar-nav { padding: 8px 0; flex: 1; }
+  .nav-section { padding: 10px 16px 4px; font-size: 9px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; font-size: 13px; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .nav-item.active { background: rgba(46,134,171,0.25); color: #fff; border-left-color: #2E86AB; font-weight: 600; }
+  .nav-item svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+  .nav-badge { margin-left: auto; background: #2E86AB; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+  .nav-badge.amber { background: #E67E22; }
+
+  .sidebar-user { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#2E86AB,#1E3A5F); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .user-info .user-name { font-size: 12px; font-weight: 600; color: #fff; }
+  .user-info .user-role { font-size: 10px; color: rgba(255,255,255,0.45); }
+
+  /* ── Main ─────────────────────────────────────────────────────────────── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Topbar ───────────────────────────────────────────────────────────── */
+  .topbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-left { display: flex; flex-direction: column; }
+  .topbar-title { font-size: 15px; font-weight: 700; color: #1E3A5F; }
+  .topbar-sub { font-size: 11px; color: #8896A9; margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: #1E3A5F; color: #fff; }
+  .btn-primary:hover { background: #2E86AB; }
+  .btn-outline { background: #fff; color: #1E3A5F; border: 1.5px solid #C5D5E4; }
+  .btn-outline:hover { background: #F0F6FA; }
+  .btn-ghost { background: transparent; color: #5A6A7E; border: none; padding: 7px 10px; }
+  .btn svg { width: 14px; height: 14px; fill: currentColor; }
+  .topbar-icon { width: 36px; height: 36px; border-radius: 8px; background: #F0F4F8; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+  .topbar-icon svg { width: 18px; height: 18px; fill: #5A6A7E; }
+  .notif-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background: #E74C3C; border-radius: 50%; border: 1.5px solid #fff; }
+
+  /* ── Stats ────────────────────────────────────────────────────────────── */
+  .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 16px 24px; flex-shrink: 0; }
+  .stat-card { background: #fff; border-radius: 10px; padding: 14px 16px; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 4px; }
+  .stat-label { font-size: 11px; color: #8896A9; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 24px; font-weight: 700; color: #1E3A5F; line-height: 1; }
+  .stat-sub { font-size: 11px; display: flex; align-items: center; gap: 4px; }
+  .stat-sub.up { color: #27AE60; }
+  .stat-sub.warn { color: #E67E22; }
+  .stat-sub.neutral { color: #8896A9; }
+  .stat-sub svg { width: 11px; height: 11px; fill: currentColor; }
+  .stat-accent { width: 3px; height: 36px; border-radius: 2px; position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+  .stat-card { position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 2px 0 0 2px; }
+  .stat-card.blue::before { background: #2E86AB; }
+  .stat-card.green::before { background: #27AE60; }
+  .stat-card.amber::before { background: #F39C12; }
+  .stat-card.red::before { background: #E74C3C; }
+  .stat-card.purple::before { background: #8E44AD; }
+
+  /* ── Controls ─────────────────────────────────────────────────────────── */
+  .controls { padding: 0 24px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+  .view-tabs { display: flex; background: #E8EEF4; border-radius: 8px; padding: 3px; gap: 2px; }
+  .view-tab { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; color: #5A6A7E; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; }
+  .view-tab.active { background: #fff; color: #1E3A5F; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .view-tab svg { width: 13px; height: 13px; fill: currentColor; }
+  .filter-pill { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; font-size: 12px; border: 1.5px solid #C5D5E4; background: #fff; color: #5A6A7E; cursor: pointer; }
+  .filter-pill svg { width: 12px; height: 12px; fill: currentColor; }
+  .filter-pill.active-filter { border-color: #2E86AB; color: #2E86AB; background: #EAF4F9; }
+  .search-box { display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 7px; border: 1.5px solid #C5D5E4; background: #fff; flex: 1; max-width: 240px; }
+  .search-box svg { width: 14px; height: 14px; fill: #8896A9; flex-shrink: 0; }
+  .search-box input { border: none; outline: none; font-size: 12px; color: #1A1A2E; width: 100%; background: transparent; }
+  .search-box input::placeholder { color: #B0BEC5; }
+  .spacer { flex: 1; }
+  .export-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 7px; background: #1E3A5F; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+  .export-btn svg { width: 13px; height: 13px; fill: currentColor; }
+
+  /* ── Table View ───────────────────────────────────────────────────────── */
+  .content-area { flex: 1; overflow-y: auto; padding: 0 24px 24px; }
+  .table-wrapper { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: #F7FAFC; }
+  thead th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #8896A9; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #E2E8F0; white-space: nowrap; }
+  thead th:first-child { padding-left: 16px; }
+  thead th input[type=checkbox] { accent-color: #2E86AB; width: 14px; height: 14px; }
+  tbody tr { border-bottom: 1px solid #F0F4F8; transition: background 0.1s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #F7FAFC; }
+  tbody tr.selected { background: #EAF4F9; }
+  td { padding: 11px 14px; vertical-align: middle; font-size: 13px; }
+  td:first-child { padding-left: 16px; }
+  td input[type=checkbox] { accent-color: #2E86AB; width: 14px; height: 14px; }
+  .ref { font-weight: 700; color: #1E3A5F; font-size: 12px; }
+  .ref span { font-weight: 400; color: #8896A9; font-size: 11px; display: block; margin-top: 1px; }
+
+  /* ── Badges ───────────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .badge-confirmed { background: #E8F8F0; color: #1E8449; }
+  .badge-confirmed::before { background: #27AE60; }
+  .badge-pending { background: #FEF9E7; color: #B7770D; }
+  .badge-pending::before { background: #F39C12; }
+  .badge-cancelled { background: #FDEDEC; color: #A93226; }
+  .badge-cancelled::before { background: #E74C3C; }
+  .badge-paid { background: #E8F8F0; color: #1E8449; border: 1px solid #A9DFBF; }
+  .badge-paid::before { display: none; }
+  .badge-unpaid { background: #FDEDEC; color: #A93226; border: 1px solid #F5B7B1; }
+  .badge-unpaid::before { display: none; }
+  .badge-cash { background: #EAF4F9; color: #1A6F8A; border: 1px solid #AED6F1; }
+  .badge-cash::before { display: none; }
+  .badge-company { background: #F4ECF7; color: #6C3483; border: 1px solid #D2B4DE; }
+  .badge-company::before { display: none; }
+  .badge-stripe { background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; }
+  .badge-stripe::before { display: none; }
+  .badge-tag { background: #F0F4F8; color: #5A6A7E; border: 1px solid #C5D5E4; font-size: 10px; }
+  .badge-tag::before { display: none; }
+  .badge-promo { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; font-size: 10px; }
+  .badge-promo::before { display: none; }
+  .trip-type { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #5A6A7E; }
+  .trip-type svg { width: 12px; height: 12px; fill: currentColor; }
+
+  /* ── Pax Info ─────────────────────────────────────────────────────────── */
+  .pax-info { display: flex; align-items: center; gap: 10px; }
+  .pax-detail { display: flex; align-items: center; gap: 3px; color: #5A6A7E; font-size: 12px; }
+  .pax-detail svg { width: 12px; height: 12px; fill: currentColor; }
+  .guest-name { font-weight: 600; font-size: 13px; }
+  .guest-email { font-size: 11px; color: #8896A9; }
+  .price-col { text-align: right; }
+  .price-orig { font-size: 11px; color: #B0BEC5; text-decoration: line-through; }
+  .price-final { font-weight: 700; color: #1E3A5F; }
+  .price-disc { font-size: 10px; color: #27AE60; }
+  .action-dots { color: #B0BEC5; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+  .action-dots:hover { background: #F0F4F8; color: #5A6A7E; }
+
+  /* ── Kanban ───────────────────────────────────────────────────────────── */
+  .kanban { display: none; gap: 14px; padding-bottom: 24px; overflow-x: auto; }
+  .kanban.visible { display: flex; }
+  .kanban-col { min-width: 240px; max-width: 240px; display: flex; flex-direction: column; gap: 0; }
+  .kanban-header { padding: 10px 14px; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; }
+  .kanban-header.pending-h { background: #FEF9E7; color: #B7770D; border: 1px solid #F9E4A0; border-bottom: none; }
+  .kanban-header.confirmed-h { background: #E8F8F0; color: #1E8449; border: 1px solid #A9DFBF; border-bottom: none; }
+  .kanban-header.cancelled-h { background: #FDEDEC; color: #A93226; border: 1px solid #F5B7B1; border-bottom: none; }
+  .kanban-count { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .pending-h .kanban-count { background: #F39C12; color: #fff; }
+  .confirmed-h .kanban-count { background: #27AE60; color: #fff; }
+  .cancelled-h .kanban-count { background: #E74C3C; color: #fff; }
+  .kanban-body { background: #F7FAFC; border-radius: 0 0 10px 10px; border: 1px solid #E2E8F0; border-top: none; display: flex; flex-direction: column; gap: 8px; padding: 10px; flex: 1; }
+  .kanban-card { background: #fff; border-radius: 8px; padding: 12px; border: 1px solid #E2E8F0; cursor: pointer; transition: box-shadow 0.15s; }
+  .kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .kanban-card .kc-ref { font-size: 10px; font-weight: 700; color: #8896A9; margin-bottom: 6px; }
+  .kanban-card .kc-name { font-size: 13px; font-weight: 600; color: #1E3A5F; margin-bottom: 3px; }
+  .kanban-card .kc-route { font-size: 11px; color: #5A6A7E; margin-bottom: 8px; }
+  .kanban-card .kc-footer { display: flex; align-items: center; justify-content: space-between; }
+  .kanban-card .kc-price { font-size: 13px; font-weight: 700; color: #1E3A5F; }
+  .kc-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+
+  /* ── Modal Overlay (Booking Detail) ───────────────────────────────────── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,25,50,0.45); display: flex; align-items: flex-start; justify-content: flex-end; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-panel { width: 440px; height: 100vh; background: #fff; overflow-y: auto; box-shadow: -4px 0 24px rgba(0,0,0,0.15); display: flex; flex-direction: column; transform: translateX(60px); transition: transform 0.25s; }
+  .modal-overlay.open .modal-panel { transform: translateX(0); }
+  .modal-header { padding: 18px 20px 14px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0; }
+  .modal-header-left .modal-ref { font-size: 11px; color: #8896A9; font-weight: 600; }
+  .modal-header-left .modal-guest { font-size: 16px; font-weight: 700; color: #1E3A5F; margin: 2px 0; }
+  .modal-header-left .modal-email { font-size: 12px; color: #8896A9; }
+  .modal-close { width: 30px; height: 30px; border-radius: 6px; background: #F0F4F8; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #5A6A7E; font-size: 16px; flex-shrink: 0; }
+  .modal-close:hover { background: #E2E8F0; }
+  .modal-body { padding: 16px 20px; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+  .modal-section-title { font-size: 10px; font-weight: 700; color: #8896A9; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .leg-card { border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; }
+  .leg-header { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; background: #F7FAFC; border-bottom: 1px solid #E2E8F0; }
+  .leg-dir { font-size: 12px; font-weight: 700; color: #1E3A5F; display: flex; align-items: center; gap: 6px; }
+  .leg-dir svg { width: 14px; height: 14px; fill: #2E86AB; }
+  .leg-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; }
+  .leg-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .leg-row .lbl { color: #8896A9; }
+  .leg-row .val { font-weight: 600; color: #1E3A5F; }
+  .leg-row .val.promo { color: #27AE60; }
+  .leg-footer { padding: 10px 14px; background: #F0F6FA; border-top: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; }
+  .leg-price { font-size: 15px; font-weight: 700; color: #1E3A5F; }
+  .leg-price-orig { font-size: 11px; color: #B0BEC5; text-decoration: line-through; margin-right: 4px; }
+  .consent-box { background: #EAF4F9; border: 1px solid #AED6F1; border-radius: 8px; padding: 10px 12px; }
+  .consent-box .consent-label { font-size: 10px; font-weight: 700; color: #1A6F8A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .consent-box .consent-val { font-size: 12px; color: #1A6F8A; }
+  .notes-area { border: 1.5px solid #C5D5E4; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #5A6A7E; min-height: 60px; resize: none; width: 100%; outline: none; font-family: inherit; }
+  .tags-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-chip { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1.5px solid; }
+  .tag-chip.sel { background: #1E3A5F; color: #fff; border-color: #1E3A5F; }
+  .tag-chip.unsel { background: #fff; color: #5A6A7E; border-color: #C5D5E4; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid #E2E8F0; display: flex; gap: 8px; flex-shrink: 0; }
+  .modal-footer .btn { flex: 1; justify-content: center; }
+  .btn-confirm { background: #27AE60; color: #fff; }
+  .btn-confirm:hover { background: #1E8449; }
+  .btn-danger { background: #fff; color: #E74C3C; border: 1.5px solid #E74C3C; }
+  .btn-danger:hover { background: #FDEDEC; }
+  .activity-item { display: flex; gap: 10px; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: #2E86AB; flex-shrink: 0; margin-top: 4px; }
+  .activity-dot.green { background: #27AE60; }
+  .activity-dot.amber { background: #F39C12; }
+  .activity-content { flex: 1; }
+  .activity-content .act-text { font-size: 12px; color: #1A1A2E; }
+  .activity-content .act-time { font-size: 10px; color: #B0BEC5; margin-top: 1px; }
+  .activity-line { display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── Scrollbar ────────────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #C5D5E4; border-radius: 3px; }
+
+  /* ── Responsive adjustment ────────────────────────────────────────────── */
+  @media (max-width: 1100px) { .stats-bar { grid-template-columns: repeat(3,1fr); } }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">TransitFlow</div>
+        <div class="logo-sub">EO Dashboard</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-project">
+    <label>Active Project</label>
+    <div class="project-name">
+      APAC Summit 2026
+      <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-section">Operations</div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.52 15.48 0 12.38 0 10.79 0 9.38.65 8.37 1.67L7 3H4c-1.1 0-2 .9-2 2v15c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 14H6v-2h6v2zm2-4H6v-2h8v2zm0-4H6v-2h8v2zm6 4h-4V8h4v8z"/></svg>
+      Bookings
+      <span class="nav-badge">24</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+      Trips
+      <span class="nav-badge amber">3</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      Passengers
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+      Messages
+      <span class="nav-badge">5</span>
+    </div>
+    <div class="nav-section">Config</div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+      Project Settings
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+      Promo Codes
+    </div>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">JL</div>
+    <div class="user-info">
+      <div class="user-name">Jamie Lee</div>
+      <div class="user-role">Event Organizer</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">Booking Management</div>
+      <div class="topbar-sub">APAC Summit 2026 · 14–18 Apr 2026 · Suvarnabhumi (BKK)</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <div class="notif-dot"></div>
+      </div>
+      <button class="btn btn-outline" onclick="toggleView()">
+        <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        Toggle View
+      </button>
+      <button class="btn btn-primary" onclick="document.querySelector('.modal-overlay').classList.add('open')">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+        View Booking
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card blue">
+      <div class="stat-label">Total Bookings</div>
+      <div class="stat-value">84</div>
+      <div class="stat-sub up">
+        <svg viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+        +12 this week
+      </div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">To Be Confirmed</div>
+      <div class="stat-value">24</div>
+      <div class="stat-sub warn">
+        <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        Needs action
+      </div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Confirmed</div>
+      <div class="stat-value">53</div>
+      <div class="stat-sub up">
+        <svg viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+        63% of total
+      </div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Unpaid (Stripe)</div>
+      <div class="stat-value">11</div>
+      <div class="stat-sub warn">
+        <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        Awaiting payment
+      </div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">Promo Used</div>
+      <div class="stat-value">18</div>
+      <div class="stat-sub neutral">
+        <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42z"/></svg>
+        21% of bookings
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="view-tabs" id="viewTabs">
+      <div class="view-tab active" id="tab-table" onclick="switchView('table')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+        Table
+      </div>
+      <div class="view-tab" id="tab-kanban" onclick="switchView('kanban')">
+        <svg viewBox="0 0 24 24"><path d="M4 6h2v12H4zm7 0h2v8h-2zm7 0h2v5h-2z"/></svg>
+        Kanban
+      </div>
+    </div>
+    <div class="search-box">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" placeholder="Search by name, ref, flight…" />
+    </div>
+    <div class="filter-pill active-filter">
+      <svg viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+      Status: All
+    </div>
+    <div class="filter-pill">
+      <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+      Airport: All
+    </div>
+    <div class="filter-pill">
+      <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+      Hotel: All
+    </div>
+    <div class="filter-pill">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4v2l8 5 8-5V4zm0 4l-8 5-8-5v10h16V8z"/></svg>
+      Payment
+    </div>
+    <div class="spacer"></div>
+    <button class="export-btn">
+      <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      Export CSV
+    </button>
+  </div>
+
+  <!-- Content Area -->
+  <div class="content-area">
+
+    <!-- TABLE VIEW -->
+    <div id="view-table" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox"/></th>
+            <th>Booking Ref</th>
+            <th>Passenger</th>
+            <th>Trip Type</th>
+            <th>Route</th>
+            <th>Pickup</th>
+            <th>Pax</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th style="text-align:right">Price</th>
+            <th>Tags</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Row 1 -->
+          <tr onclick="document.querySelector('.modal-overlay').classList.add('open')">
+            <td><input type="checkbox" checked/></td>
+            <td><div class="ref">TF-00421<span>Round Trip</span></div></td>
+            <td><div class="guest-name">Sarah Mitchell</div><div class="guest-email">s.mitchell@corp.com</div></td>
+            <td><span class="trip-type"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>↔ Round</span></td>
+            <td style="font-size:12px;color:#5A6A7E">BKK → Anantara<br><span style="color:#B0BEC5">Return: Anantara → BKK</span></td>
+            <td style="font-size:12px">14 Apr · 09:30<br><span style="color:#B0BEC5">17 Apr · 11:00</span></td>
+            <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 2 · 🧳 2</div></td>
+            <td><span class="badge badge-confirmed">Confirmed</span></td>
+            <td><span class="badge badge-stripe">Stripe</span> <span class="badge badge-paid">Paid</span></td>
+            <td class="price-col"><div class="price-orig">฿3,200</div><div class="price-final">฿2,720</div><div class="price-disc">VIP15 –15%</div></td>
+            <td><span class="badge badge-tag">VIP</span></td>
+            <td><div class="action-dots">···</div></td>
+          </tr>
+          <!-- Row 2 -->
+          <tr>
+            <td><input type="checkbox"/></td>
+            <td><div class="ref">TF-00418<span>One Way</span></div></td>
+            <td><div class="guest-name">Marcus Okafor</div><div class="guest-email">m.okafor@gmail.com</div></td>
+            <td><span class="trip-type"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg> One Way</span></td>
+            <td style="font-size:12px;color:#5A6A7E">BKK → Centara Grand</td>
+            <td style="font-size:12px">14 Apr · 10:15</td>
+            <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 1 · 🧳 1</div></td>
+            <td><span class="badge badge-pending">To Be Confirmed</span></td>
+            <td><span class="badge badge-cash">Cash</span></td>
+            <td class="price-col"><div class="price-final">฿1,400</div></td>
+            <td>—</td>
+            <td><div class="action-dots">···</div></td>
+          </tr>
+          <!-- Row 3 -->
+          <tr>
+            <td><input type="checkbox"/></td>
+            <td><div class="ref">TF-00415<span>Round Trip</span></div></td>
+            <td><div class="guest-name">Priya Sharma</div><div class="guest-email">priya.s@techcorp.io</div></td>
+            <td><span class="trip-type"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>↔ Round</span></td>
+            <td style="font-size:12px;color:#5A6A7E">BKK → Lebua<br><span style="color:#B0BEC5">Return: Lebua → BKK</span></td>
+            <td style="font-size:12px">14 Apr · 13:00<br><span style="color:#B0BEC5">18 Apr · 08:30</span></td>
+            <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 4 · 🧳 5</div></td>
+            <td><span class="badge badge-confirmed">Confirmed</span></td>
+            <td><span class="badge badge-stripe">Stripe</span> <span class="badge badge-unpaid">Unpaid</span></td>
+            <td class="price-col"><div class="price-final">฿5,600</div></td>
+            <td><span class="badge badge-tag">Speaker</span></td>
+            <td><div class="action-dots">···</div></td>
+          </tr>
+          <!-- Row 4 -->
+          <tr>
+            <td><input type="checkbox"/></td>
+            <td><div class="ref">TF-00411<span>One Way</span></div></td>
+            <td><div class="guest-name">David Chen</div><div class="guest-email">d.chen@summit.org</div></td>
+            <td><span class="trip-type">← One Way</span></td>
+            <td style="font-size:12px;color:#5A6A7E">Lebua → BKK</td>
+            <td style="font-size:12px">17 Apr · 06:00</td>
+            <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 1 · 🧳 2</div></td>
+            <td><span class="badge badge-pending">To Be Confirmed</span></td>
+            <td><span class="badge badge-company">Company</span></td>
+            <td class="price-col"><div class="price-orig">฿1,600</div><div class="price-final">฿0</div><div class="price-disc">VIP100 – Full waiver</div></td>
+            <td><span class="badge badge-promo">VIP100</span></td>
+            <td><div class="action-dots">···</div></td>
+          </tr>
+          <!-- Row 5 -->
+          <tr>
+            <td><input type="checkbox"/></td>
+            <td><div class="ref">TF-00409<span>One Way</span></div></td>
+            <td><div class="guest-name">Aisha Al-Rashid</div><div class="guest-email">aisha.ar@media.ae</div></td>
+            <td><span class="trip-type"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg> One Way</span></td>
+            <td style="font-size:12px;color:#5A6A7E">BKK → Mandarin Oriental</td>
+            <td style="font-size:12px">14 Apr · 14:45</td>
+            <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 2 · 🧳 3</div></td>
+            <td><span class="badge badge-confirmed">Confirmed</span></td>
+            <td><span class="badge badge-stripe">Stripe</span> <span class="badge badge-paid">Paid</span></td>
+            <td class="price-col"><div class="price-final">฿1,800</div></td>
+            <td><span class="badge badge-tag">Press</span></td>
+            <td><div class="action-dots">···</div></td>
+          </tr>
+          <!-- Row 6 -->
+          <tr>
+            <td><input type="checkbox"/></td>
+            <td><div class="ref">TF-00403<span>Round Trip</span></div></td>
+            <td><div class="guest-name">Tom Brouwer</div><div class="guest-email">t.brouwer@agency.nl</div></td>
+            <td><span class="trip-type">↔ Round</span></td>
+            <td style="font-size:12px;color:#5A6A7E">BKK → Anantara<br><span style="color:#B0BEC5">Return: Anantara → BKK</span></td>
+            <td style="font-size:12px">15 Apr · 07:00<br><span style="color:#B0BEC5">18 Apr · 15:30</span></td>
+            <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 3 · 🧳 4</div></td>
+            <td><span class="badge badge-cancelled">Cancelled</span></td>
+            <td><span class="badge badge-stripe">Stripe</span> <span class="badge badge-paid">Refunded</span></td>
+            <td class="price-col"><div class="price-final" style="color:#B0BEC5">฿4,200</div></td>
+            <td>—</td>
+            <td><div class="action-dots">···</div></td>
+          </tr>
+          <!-- Row 7 -->
+          <tr>
+            <td><input type="checkbox"/></td>
+            <td><div class="ref">TF-00398<span>One Way</span></div></td>
+            <td><div class="guest-name">Nina Kowalski</div><div class="guest-email">n.kowalski@uni.pl</div></td>
+            <td><span class="trip-type"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg> One Way</span></td>
+            <td style="font-size:12px;color:#5A6A7E">BKK → Centara Grand</td>
+            <td style="font-size:12px">15 Apr · 11:30</td>
+            <td><div class="pax-detail"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 1 · 🧳 1</div></td>
+            <td><span class="badge badge-pending">To Be Confirmed</span></td>
+            <td><span class="badge badge-cash">Cash</span></td>
+            <td class="price-col"><div class="price-orig">฿1,400</div><div class="price-final">฿1,190</div><div class="price-disc">EARLY15 –15%</div></td>
+            <td><span class="badge badge-promo">EARLY15</span></td>
+            <td><div class="action-dots">···</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- KANBAN VIEW -->
+    <div id="view-kanban" class="kanban">
+      <!-- To Be Confirmed -->
+      <div class="kanban-col">
+        <div class="kanban-header pending-h">To Be Confirmed <span class="kanban-count">24</span></div>
+        <div class="kanban-body">
+          <div class="kanban-card">
+            <div class="kc-ref">TF-00418 · One Way · Cash</div>
+            <div class="kc-name">Marcus Okafor</div>
+            <div class="kc-route">✈ BKK → Centara Grand · 14 Apr 10:15</div>
+            <div class="kc-footer"><span class="badge badge-cash">Cash</span><span class="kc-price">฿1,400</span></div>
+          </div>
+          <div class="kanban-card">
+            <div class="kc-ref">TF-00411 · One Way · Company</div>
+            <div class="kc-name">David Chen</div>
+            <div class="kc-route">🏨 Lebua → BKK · 17 Apr 06:00</div>
+            <div class="kc-footer"><span class="badge badge-company">Company</span><span class="kc-price">฿0</span></div>
+            <div class="kc-tags"><span class="badge badge-promo">VIP100</span></div>
+          </div>
+          <div class="kanban-card">
+            <div class="kc-ref">TF-00398 · One Way · Cash</div>
+            <div class="kc-name">Nina Kowalski</div>
+            <div class="kc-route">✈ BKK → Centara Grand · 15 Apr 11:30</div>
+            <div class="kc-footer"><span class="badge badge-cash">Cash</span><span class="kc-price">฿1,190</span></div>
+            <div class="kc-tags"><span class="badge badge-promo">EARLY15</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Confirmed -->
+      <div class="kanban-col">
+        <div class="kanban-header confirmed-h">Confirmed <span class="kanban-count">53</span></div>
+        <div class="kanban-body">
+          <div class="kanban-card">
+            <div class="kc-ref">TF-00421 · Round Trip · Stripe</div>
+            <div class="kc-name">Sarah Mitchell</div>
+            <div class="kc-route">✈ BKK ↔ Anantara · 14–17 Apr</div>
+            <div class="kc-footer"><span class="badge badge-paid">Paid</span><span class="kc-price">฿2,720</span></div>
+            <div class="kc-tags"><span class="badge badge-tag">VIP</span><span class="badge badge-promo">VIP15</span></div>
+          </div>
+          <div class="kanban-card">
+            <div class="kc-ref">TF-00415 · Round Trip · Stripe</div>
+            <div class="kc-name">Priya Sharma</div>
+            <div class="kc-route">✈ BKK ↔ Lebua · 14–18 Apr</div>
+            <div class="kc-footer"><span class="badge badge-unpaid">Unpaid</span><span class="kc-price">฿5,600</span></div>
+            <div class="kc-tags"><span class="badge badge-tag">Speaker</span></div>
+          </div>
+          <div class="kanban-card">
+            <div class="kc-ref">TF-00409 · One Way · Stripe</div>
+            <div class="kc-name">Aisha Al-Rashid</div>
+            <div class="kc-route">✈ BKK → Mandarin Oriental · 14 Apr</div>
+            <div class="kc-footer"><span class="badge badge-paid">Paid</span><span class="kc-price">฿1,800</span></div>
+            <div class="kc-tags"><span class="badge badge-tag">Press</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Cancelled -->
+      <div class="kanban-col">
+        <div class="kanban-header cancelled-h">Cancelled <span class="kanban-count">7</span></div>
+        <div class="kanban-body">
+          <div class="kanban-card">
+            <div class="kc-ref">TF-00403 · Round Trip · Stripe</div>
+            <div class="kc-name">Tom Brouwer</div>
+            <div class="kc-route">✈ BKK ↔ Anantara · 15–18 Apr</div>
+            <div class="kc-footer"><span class="badge badge-paid">Refunded</span><span class="kc-price" style="color:#B0BEC5">฿4,200</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BOOKING DETAIL MODAL (Slide-in Panel)
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-ref">TF-00421 · Round Trip</div>
+        <div class="modal-guest">Sarah Mitchell</div>
+        <div class="modal-email">s.mitchell@corp.com</div>
+      </div>
+      <button class="modal-close" onclick="document.querySelector('.modal-overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Status badges -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge badge-confirmed">Confirmed</span>
+        <span class="badge badge-stripe">Stripe</span>
+        <span class="badge badge-paid">Paid</span>
+        <span class="badge badge-promo">VIP15</span>
+        <span class="badge badge-tag">VIP</span>
+      </div>
+
+      <!-- Outbound Leg -->
+      <div>
+        <div class="modal-section-title">Outbound Leg</div>
+        <div class="leg-card">
+          <div class="leg-header">
+            <div class="leg-dir">
+              <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+              BKK (Suvarnabhumi) → Anantara Riverside
+            </div>
+            <span class="badge badge-confirmed">Confirmed</span>
+          </div>
+          <div class="leg-body">
+            <div class="leg-row"><span class="lbl">Flight</span><span class="val">TG311</span></div>
+            <div class="leg-row"><span class="lbl">Pickup</span><span class="val">14 Apr 2026 · 09:30</span></div>
+            <div class="leg-row"><span class="lbl">Passengers</span><span class="val">2 pax · 2 bags</span></div>
+            <div class="leg-row"><span class="lbl">Vehicle</span><span class="val">Sedan (Assigned)</span></div>
+            <div class="leg-row"><span class="lbl">Meeting Point</span><span class="val">Arrivals Hall Gate 5 – TransitFlow Desk</span></div>
+            <div class="leg-row"><span class="lbl">Promo</span><span class="val promo">VIP15 → –15% (฿240 off)</span></div>
+          </div>
+          <div class="leg-footer">
+            <span style="font-size:12px;color:#5A6A7E">Leg total</span>
+            <span><span class="leg-price-orig">฿1,600</span><span class="leg-price">฿1,360</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Return Leg -->
+      <div>
+        <div class="modal-section-title">Return Leg</div>
+        <div class="leg-card">
+          <div class="leg-header">
+            <div class="leg-dir">
+              <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+              Anantara Riverside → BKK (Suvarnabhumi)
+            </div>
+            <span class="badge badge-confirmed">Confirmed</span>
+          </div>
+          <div class="leg-body">
+            <div class="leg-row"><span class="lbl">Flight</span><span class="val">TG418</span></div>
+            <div class="leg-row"><span class="lbl">Pickup</span><span class="val">17 Apr 2026 · 11:00</span></div>
+            <div class="leg-row"><span class="lbl">Passengers</span><span class="val">2 pax · 2 bags</span></div>
+            <div class="leg-row"><span class="lbl">Vehicle</span><span class="val">Sedan (Assigned)</span></div>
+            <div class="leg-row"><span class="lbl">Meeting Point</span><span class="val">Hotel Lobby – Valet Drop-off</span></div>
+            <div class="leg-row"><span class="lbl">Promo</span><span class="val promo">VIP15 → –15% (฿240 off)</span></div>
+          </div>
+          <div class="leg-footer">
+            <span style="font-size:12px;color:#5A6A7E">Leg total</span>
+            <span><span class="leg-price-orig">฿1,600</span><span class="leg-price">฿1,360</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div style="background:#F7FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:12px;color:#5A6A7E;font-weight:600">BOOKING TOTAL</div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#B0BEC5;text-decoration:line-through">฿3,200</div>
+          <div style="font-size:18px;font-weight:700;color:#1E3A5F">฿2,720</div>
+          <div style="font-size:10px;color:#27AE60">VIP15 saved ฿480</div>
+        </div>
+      </div>
+
+      <!-- Consent -->
+      <div>
+        <div class="modal-section-title">Disclaimer Consent</div>
+        <div class="consent-box">
+          <div class="consent-label">✓ Consent Recorded</div>
+          <div class="consent-val">Version 2.1 · Agreed on 28 Mar 2026 at 14:22 UTC<br>Guest confirmed via booking portal (IP: 203.xxx.xxx.xx)</div>
+        </div>
+      </div>
+
+      <!-- Internal Tags -->
+      <div>
+        <div class="modal-section-title">Internal Tags</div>
+        <div class="tags-row">
+          <div class="tag-chip sel">VIP</div>
+          <div class="tag-chip unsel">Speaker</div>
+          <div class="tag-chip unsel">Press</div>
+          <div class="tag-chip unsel">Staff</div>
+          <div class="tag-chip unsel">Crew</div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <div class="modal-section-title">Internal Notes</div>
+        <textarea class="notes-area" rows="3" placeholder="Add internal note visible only to EOs…">Guest is keynote speaker. Ensure driver is on time. Preferred: female driver if possible.</textarea>
+      </div>
+
+      <!-- Activity Log -->
+      <div>
+        <div class="modal-section-title">Activity Log</div>
+        <div class="activity-line">
+          <div class="activity-item">
+            <div class="activity-dot green"></div>
+            <div class="activity-content"><div class="act-text">Booking confirmed by Jamie Lee (EO)</div><div class="act-time">30 Mar 2026 · 09:14</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot"></div>
+            <div class="activity-content"><div class="act-text">Stripe payment received — ฿2,720</div><div class="act-time">29 Mar 2026 · 22:47</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot amber"></div>
+            <div class="activity-content"><div class="act-text">Promo code VIP15 applied — ฿480 discount</div><div class="act-time">28 Mar 2026 · 14:25</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot"></div>
+            <div class="activity-content"><div class="act-text">Disclaimer v2.1 accepted by passenger</div><div class="act-time">28 Mar 2026 · 14:22</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot"></div>
+            <div class="activity-content"><div class="act-text">Booking created by passenger via portal</div><div class="act-time">28 Mar 2026 · 14:20</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+    <div class="modal-footer">
+      <button class="btn btn-danger">Cancel Booking</button>
+      <button class="btn btn-confirm">✓ Re-confirm All Legs</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchView(v) {
+    document.getElementById('view-table').style.display  = v === 'table'  ? 'block' : 'none';
+    document.getElementById('view-kanban').style.display = v === 'kanban' ? 'flex'  : 'none';
+    document.getElementById('tab-table').classList.toggle('active', v === 'table');
+    document.getElementById('tab-kanban').classList.toggle('active', v === 'kanban');
+  }
+  function toggleView() {
+    const t = document.getElementById('view-table');
+    switchView(t.style.display !== 'none' ? 'kanban' : 'table');
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.querySelector('.modal-overlay')) {
+      document.querySelector('.modal-overlay').classList.remove('open');
+    }
+  }
+</script>
+</body>
+</html>
