@@ -203,12 +203,119 @@
   .metric-name .mdot { width: 10px; height: 10px; border-radius: 50%; }
   .metric-val { font-size: 14px; font-weight: 700; color: var(--navy); }
   .metric-pct { font-size: 12px; color: var(--gray5); }
+
+  /* ── Mobile: Hamburger button ─────────────────────────────────────────── */
+  .sidebar-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 36px; height: 36px;
+    background: #F0F4F8;
+    border: none; border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sidebar-hamburger span {
+    display: block;
+    width: 18px; height: 2px;
+    background: #1E3A5F;
+    border-radius: 2px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  .sidebar-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .sidebar-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .sidebar-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* ── Sidebar overlay (mobile) ─────────────────────────────────────────── */
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(15,25,50,0.5);
+    z-index: 49;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* ── Mobile responsive ────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    body { overflow-y: auto; height: auto; }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100vh;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      z-index: 50;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .sidebar-hamburger { display: flex; }
+
+    .main { overflow: visible; }
+
+    .content { overflow: visible; padding: 20px 16px; }
+
+    .topbar { padding: 0 14px; }
+
+    .page-subtitle { display: none; }
+
+    .header-actions { flex-wrap: nowrap; font-size: 12px; }
+    .header-actions .btn { padding: 6px 10px; font-size: 12px; }
+
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+    .two-col { grid-template-columns: 1fr; }
+    .three-col { grid-template-columns: 1fr; }
+
+    .data-table { font-size: 12px; }
+    .data-table th { padding: 8px 10px; font-size: 10px; }
+    .data-table td { padding: 8px 10px; }
+
+    .filter-bar { flex-wrap: wrap; padding: 10px 12px; gap: 8px; }
+    .filter-select, .filter-input { padding: 6px 10px; font-size: 12px; }
+    .filter-label { font-size: 11px; }
+
+    .tab-bar { flex-wrap: wrap; width: 100%; }
+    .tab-btn { padding: 6px 14px; font-size: 12px; }
+
+    .donut-wrap { flex-direction: column; gap: 16px; }
+
+    .heatmap-grid { grid-template-columns: 50px repeat(7, 1fr); gap: 2px; }
+
+    .progress-bar-wrap { width: 60px; }
+
+    .nav-item { font-size: 13px; }
+  }
+
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+
+    .header-actions { flex-direction: column; width: 100%; }
+    .export-group { flex-direction: column; width: 100%; }
+    .export-group .btn, .header-actions .btn { width: 100%; }
+
+    .page-title { font-size: 18px; }
+
+    .heatmap-grid { grid-template-columns: 40px repeat(7, 1fr); gap: 2px; font-size: 10px; }
+
+    .data-table { font-size: 11px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    .topbar-breadcrumb { display: none; }
+
+    .topbar-project { font-size: 11px; padding: 5px 10px; }
+    .proj-name { font-size: 11px; }
+    .proj-label { font-size: 10px; }
+  }
 </style>
 </head>
 <body>
 
 <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-mark">Transit<span>Flow</span></div>
     <div class="logo-sub">Event Transport System</div>
@@ -240,6 +347,9 @@
 <!-- ══ MAIN ══════════════════════════════════════════════ -->
 <div class="main">
   <div class="topbar">
+    <button class="sidebar-hamburger" id="sidebarToggle" aria-label="Open navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
     <div class="topbar-breadcrumb">
       <span>Projects</span><span style="color:var(--gray3);">›</span>
       <span>APEC Summit 2026</span><span style="color:var(--gray3);">›</span>
@@ -1096,6 +1206,36 @@ function showToast(msg) {
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('show'), 2800);
 }
+
+/* ── Sidebar mobile toggle ───────────────────────────────────────────── */
+(function() {
+  const toggle  = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    toggle.classList.add('open');
+    toggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    toggle.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+  toggle.addEventListener('click', function() {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      if (window.innerWidth <= 900) closeSidebar();
+    });
+  });
+})();
 </script>
 </body>
 </html>
