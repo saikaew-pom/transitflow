@@ -227,6 +227,98 @@
 
   /* ── Responsive adjustment ────────────────────────────────────────────── */
   @media (max-width: 1100px) { .stats-bar { grid-template-columns: repeat(3,1fr); } }
+
+  /* ── Mobile: Hamburger button ─────────────────────────────────────────── */
+  .sidebar-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 36px; height: 36px;
+    background: #F0F4F8;
+    border: none; border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sidebar-hamburger span {
+    display: block;
+    width: 18px; height: 2px;
+    background: #1E3A5F;
+    border-radius: 2px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  .sidebar-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .sidebar-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .sidebar-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* ── Sidebar overlay (mobile) ─────────────────────────────────────────── */
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(15,25,50,0.5);
+    z-index: 49;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* ── Tablet breakpoint (≤900px) ───────────────────────────────────────── */
+  @media (max-width: 900px) {
+    body { overflow-y: auto; height: auto; min-height: 100vh; flex-direction: column; }
+    .main { overflow: visible; height: auto; }
+    .content-area { overflow: visible; }
+
+    /* Sidebar becomes off-canvas drawer */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      z-index: 50;
+      transform: translateX(-100%);
+      transition: transform 0.25s;
+      width: 240px; min-width: 240px;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    /* Show hamburger in topbar */
+    .sidebar-hamburger { display: flex; }
+
+    /* Topbar adjustments */
+    .topbar { padding: 0 14px; }
+    .topbar-sub { display: none; }
+    .btn-outline { display: none; }
+
+    /* Stats: 2 columns */
+    .stats-bar { grid-template-columns: repeat(2, 1fr); padding: 12px 14px; gap: 10px; }
+
+    /* Controls padding */
+    .controls { padding: 0 14px 10px; gap: 8px; }
+    .search-box { max-width: none; flex: 1 1 100%; order: -1; }
+    .view-tabs { order: 0; }
+
+    /* Table: horizontal scroll */
+    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Content area padding */
+    .content-area { padding: 0 14px 20px; }
+
+    /* Modal: full width */
+    .modal-panel { width: 100vw; }
+  }
+
+  /* ── Small mobile (≤480px) ────────────────────────────────────────────── */
+  @media (max-width: 480px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px 12px; }
+    .stat-value { font-size: 20px; }
+    .topbar { padding: 0 12px; height: 52px; }
+    .topbar-title { font-size: 13px; }
+    .topbar-icon { display: none; }
+    .controls { padding: 0 12px 10px; }
+    .content-area { padding: 0 12px 20px; }
+    /* Filter pills: scroll horizontally */
+    .controls { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
+    .spacer { display: none; }
+    .export-btn { white-space: nowrap; flex-shrink: 0; }
+  }
 </style>
 </head>
 <body>
@@ -234,7 +326,8 @@
 <!-- ══════════════════════════════════════════════════════════════════════════
      SIDEBAR
 ══════════════════════════════════════════════════════════════════════════ -->
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-mark">
       <div class="logo-icon">
@@ -308,9 +401,14 @@
 
   <!-- Topbar -->
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-title">Booking Management</div>
-      <div class="topbar-sub">APAC Summit 2026 · 14–18 Apr 2026 · Suvarnabhumi (BKK)</div>
+    <div class="topbar-left" style="flex-direction:row;align-items:center;gap:10px;display:flex;">
+      <button class="sidebar-hamburger" id="sidebarToggle" aria-label="Open navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div>
+        <div class="topbar-title">Booking Management</div>
+        <div class="topbar-sub">APAC Summit 2026 · 14–18 Apr 2026 · Suvarnabhumi (BKK)</div>
+      </div>
     </div>
     <div class="topbar-right">
       <div class="topbar-icon">
@@ -779,6 +877,40 @@
       document.querySelector('.modal-overlay').classList.remove('open');
     }
   }
+
+  /* ── Sidebar mobile toggle ───────────────────────────────────────────── */
+  (function() {
+    const toggle  = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      toggle.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    toggle.addEventListener('click', function() {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar when a nav item is tapped on mobile
+    document.querySelectorAll('.nav-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        if (window.innerWidth <= 900) closeSidebar();
+      });
+    });
+  })();
 </script>
 </body>
 </html>
