@@ -261,6 +261,115 @@ label.fl { font-size: 11px; font-weight: 700; color: #5A6A7E; text-transform: up
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #C5D5E4; border-radius: 3px; }
+
+/* ── Mobile: Hamburger button ─────────────────────────────────────────── */
+.sidebar-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 36px; height: 36px;
+  background: #F0F4F8;
+  border: none; border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.sidebar-hamburger span {
+  display: block;
+  width: 18px; height: 2px;
+  background: #1E3A5F;
+  border-radius: 2px;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.sidebar-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.sidebar-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.sidebar-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Sidebar overlay (mobile) ─────────────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(15,25,50,0.5);
+  z-index: 49;
+}
+.sidebar-overlay.open { display: block; }
+
+/* ── Tablet (≤900px) ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  body { overflow-y: auto; height: auto; min-height: 100vh; flex-direction: column; }
+  .main { overflow: visible; height: auto; }
+  .content-area { overflow: visible; }
+
+  /* Sidebar off-canvas */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.25s;
+    width: 240px; min-width: 240px;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Show hamburger */
+  .sidebar-hamburger { display: flex; }
+
+  /* Topbar */
+  .topbar { padding: 0 14px; }
+  .topbar-sub { display: none; }
+  .btn-outline { display: none; }
+  .btn-teal span, .btn-teal .btn-text { display: none; } /* hide label, keep icon */
+
+  /* Stats: 2 columns */
+  .stats-bar { grid-template-columns: repeat(2, 1fr); padding: 12px 14px; gap: 10px; }
+
+  /* Controls: wrap + date-tabs scroll */
+  .controls { padding: 0 14px 10px; gap: 8px; flex-wrap: wrap; }
+  .date-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .search-box { flex: 1 1 100%; order: -1; width: 100%; }
+  .search-box input { width: 100%; }
+  .spacer { display: none; }
+
+  /* Content padding */
+  .content-area { padding: 0 14px 20px; }
+
+  /* Trip header: allow wrapping */
+  .trip-header { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .trip-route { order: 0; width: 100%; min-width: 0; }
+  .trip-id { order: -1; }
+  .flight-chip { order: 1; }
+  .vehicle-chip { order: 2; }
+  .cap-wrap { order: 3; }
+  .trip-header > .badge,
+  .trip-header > .b-locked { order: 4; }
+  .driver-zone { order: 5; flex: 1; }
+  .chevron { order: 6; margin-left: auto; }
+
+  /* Manifest table: horizontal scroll */
+  .trip-body .manifest-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Driver panel: full width */
+  .side-panel { width: 100vw; }
+
+  /* Status strip: scale down labels on small screens */
+  .ss-label { font-size: 8px; }
+}
+
+/* ── Small mobile (≤480px) ────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px 12px; }
+  .stat-value { font-size: 20px; }
+  .topbar { padding: 0 12px; height: 52px; }
+  .topbar-title { font-size: 13px; }
+  .topbar-actions { gap: 6px; }
+  .topbar-icon { display: none; }
+  .content-area { padding: 0 12px 20px; }
+  .controls { padding: 0 12px 10px; }
+  /* Hide Re-run Allocation text on very small screens */
+  .btn-teal { padding: 7px 10px; }
+}
 </style>
 </head>
 <body>
@@ -268,7 +377,8 @@ label.fl { font-size: 11px; font-weight: 700; color: #5A6A7E; text-transform: up
 <!-- ══════════════════════════════════════════════════════════════════════
      SIDEBAR
 ══════════════════════════════════════════════════════════════════════════ -->
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-mark">
       <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
@@ -303,9 +413,14 @@ label.fl { font-size: 11px; font-weight: 700; color: #5A6A7E; text-transform: up
 <div class="main">
 
   <div class="topbar">
-    <div>
-      <div class="topbar-title">Trip Management</div>
-      <div class="topbar-sub">APAC Summit 2026 · Auto-allocated trips grouped by flight & pickup time</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="sidebar-hamburger" id="sidebarToggle" aria-label="Open navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div>
+        <div class="topbar-title">Trip Management</div>
+        <div class="topbar-sub">APAC Summit 2026 · Auto-allocated trips grouped by flight & pickup time</div>
+      </div>
     </div>
     <div class="topbar-actions">
       <div class="topbar-icon"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><div class="notif-dot"></div></div>
@@ -794,6 +909,39 @@ label.fl { font-size: 11px; font-weight: 700; color: #5A6A7E; text-transform: up
     closeSplit();
     setTimeout(() => { alert('Guest split complete.\nNew locked trip TRIP-044 created.\nOriginal TRIP-042 downgraded from Van to Sedan.'); }, 200);
   }
+
+  /* ── Sidebar mobile toggle ───────────────────────────────────────────── */
+  (function() {
+    const toggle  = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      toggle.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    toggle.addEventListener('click', function() {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    overlay.addEventListener('click', closeSidebar);
+
+    document.querySelectorAll('.nav-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        if (window.innerWidth <= 900) closeSidebar();
+      });
+    });
+  })();
 </script>
 </body>
 </html>
