@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TransitFlow — Value Proposition Canvas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F0F4F8;
+    min-height: 100vh;
+    padding: 32px 24px 48px;
+    color: #1A1A2E;
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header-label {
+    display: inline-block;
+    background: #1E3A5F;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1E3A5F;
+    line-height: 1.2;
+  }
+  .header h1 span { color: #2E86AB; }
+  .header-sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6B7280;
+  }
+
+  /* ── Canvas wrapper ─────────────────────────────────────── */
+  .canvas-wrapper {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  /* ── Section labels above each half ────────────────────── */
+  .half-labels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 10px;
+  }
+  .half-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    padding: 6px 0;
+    border-radius: 8px;
+  }
+  .half-label.left { background: #1E3A5F; color: #fff; }
+  .half-label.right { background: #2E86AB; color: #fff; }
+
+  /* ── Main canvas grid ───────────────────────────────────── */
+  .canvas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* ── Value Map (left square) ───────────────────────────── */
+  .value-map {
+    background: #fff;
+    border-radius: 20px;
+    border: 2px solid #1E3A5F;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr 1fr;
+    box-shadow: 0 4px 24px rgba(30,58,95,0.08);
+  }
+
+  /* ── Customer Profile (right circle-ish) ──────────────── */
+  .customer-profile {
+    background: #fff;
+    border-radius: 20px;
+    border: 2px solid #2E86AB;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
+    box-shadow: 0 4px 24px rgba(46,134,171,0.1);
+  }
+
+  /* ── Products & Services (top of value map) ────────────── */
+  .ps-section {
+    background: #1E3A5F;
+    padding: 22px 24px 18px;
+  }
+  .ps-section .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 6px;
+  }
+  .ps-section h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 14px;
+  }
+  .ps-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .chip {
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .chip-white { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
+  .chip-teal  { background: rgba(46,134,171,0.2);  color: #9DD8F0; border: 1px solid rgba(46,134,171,0.3); }
+
+  /* ── Pain Relievers ──────────────────────────────────────── */
+  .pain-relievers {
+    border-top: 1.5px solid #E5E7EB;
+    padding: 20px 24px;
+    background: #fff;
+  }
+  .pain-relievers .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #E05555;
+    margin-bottom: 12px;
+  }
+  .pain-relievers .section-tag::before {
+    content: '';
+    display: block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #E05555;
+  }
+
+  /* ── Gain Creators ───────────────────────────────────────── */
+  .gain-creators {
+    border-top: 1.5px solid #E5E7EB;
+    padding: 20px 24px;
+    background: #F9FFF9;
+  }
+  .gain-creators .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #27AE60;
+    margin-bottom: 12px;
+  }
+  .gain-creators .section-tag::before {
+    content: '';
+    display: block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #27AE60;
+  }
+
+  /* ── Customer Jobs ───────────────────────────────────────── */
+  .customer-jobs {
+    padding: 20px 24px;
+    background: #F0F7FF;
+    border-bottom: 1.5px solid #E5E7EB;
+  }
+  .customer-jobs .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #2E86AB;
+    margin-bottom: 12px;
+  }
+  .customer-jobs .section-tag::before {
+    content: '';
+    display: block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2E86AB;
+  }
+
+  /* ── Customer Pains ─────────────────────────────────────── */
+  .customer-pains {
+    padding: 20px 24px;
+    background: #FFF5F5;
+    border-bottom: 1.5px solid #E5E7EB;
+  }
+  .customer-pains .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #E05555;
+    margin-bottom: 12px;
+  }
+  .customer-pains .section-tag::before {
+    content: '';
+    display: block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #E05555;
+  }
+
+  /* ── Customer Gains ─────────────────────────────────────── */
+  .customer-gains {
+    padding: 20px 24px;
+    background: #F0FFF6;
+  }
+  .customer-gains .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #27AE60;
+    margin-bottom: 12px;
+  }
+  .customer-gains .section-tag::before {
+    content: '';
+    display: block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #27AE60;
+  }
+
+  /* ── Section headings ───────────────────────────────────── */
+  .section-h {
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: #1A1A2E;
+  }
+
+  /* ── Item lists ─────────────────────────────────────────── */
+  .item-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .item-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #374151;
+  }
+  .item-list li .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .dot-navy  { background: #1E3A5F; }
+  .dot-teal  { background: #2E86AB; }
+  .dot-red   { background: #E05555; }
+  .dot-green { background: #27AE60; }
+  .dot-amber { background: #F39C12; }
+
+  /* ── Fit indicator connector ───────────────────────────── */
+  .fit-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 24px 0 0;
+  }
+  .fit-badge {
+    background: linear-gradient(135deg, #1E3A5F, #2E86AB);
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .fit-arrow {
+    font-size: 20px;
+    color: #9DD8F0;
+  }
+
+  /* ── Bottom summary ─────────────────────────────────────── */
+  .summary-band {
+    max-width: 1280px;
+    margin: 24px auto 0;
+    background: #1E3A5F;
+    border-radius: 16px;
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    box-shadow: 0 4px 24px rgba(30,58,95,0.12);
+  }
+  .summary-item { }
+  .summary-item .s-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+  }
+  .summary-item .s-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.5;
+  }
+
+  /* ── Match indicators ───────────────────────────────────── */
+  .match-row {
+    max-width: 1280px;
+    margin: 16px auto 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .match-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  .match-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .match-icon.control  { background: #E8EEF4; }
+  .match-icon.confidence { background: #E6F4FA; }
+  .match-icon.clarity  { background: #E8F8EF; }
+  .match-card .m-title { font-size: 13px; font-weight: 700; color: #1E3A5F; margin-bottom: 4px; }
+  .match-card .m-desc  { font-size: 11.5px; color: #6B7280; line-height: 1.5; }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 11px;
+    color: #9CA3AF;
+  }
+
+  @media print {
+    body { background: #fff; padding: 16px; }
+    .canvas { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-label">Go-To-Market · Step 3</div>
+  <h1><span>TransitFlow</span> — Value Proposition Canvas</h1>
+  <p class="header-sub">Segment: Corporate Shuttle Operators &nbsp;·&nbsp; March 2026</p>
+</div>
+
+<!-- ── Half labels ─────────────────────────────────────────── -->
+<div class="canvas-wrapper">
+  <div class="half-labels">
+    <div class="half-label left">⬡ &nbsp;Value Map &nbsp;— What We Offer</div>
+    <div class="half-label right">◎ &nbsp;Customer Profile &nbsp;— Who We Serve</div>
+  </div>
+
+  <!-- ── Main Canvas ──────────────────────────────────────── -->
+  <div class="canvas">
+
+    <!-- LEFT: Value Map ─────────────────────────────── -->
+    <div class="value-map">
+
+      <!-- Products & Services -->
+      <div class="ps-section">
+        <div class="section-title">Products &amp; Services</div>
+        <h2>TransitFlow Platform</h2>
+        <div class="ps-chips">
+          <span class="chip chip-white">Admin Dashboard</span>
+          <span class="chip chip-white">Route Builder</span>
+          <span class="chip chip-white">Driver Portal</span>
+          <span class="chip chip-white">Passenger Magic Link</span>
+          <span class="chip chip-teal">Live GPS Tracking</span>
+          <span class="chip chip-teal">Email Amendment Flow</span>
+          <span class="chip chip-white">Digital Boarding Pass</span>
+          <span class="chip chip-teal">Reports &amp; Analytics</span>
+          <span class="chip chip-white">Daily Automated Reports</span>
+          <span class="chip chip-teal">Project Settings</span>
+        </div>
+      </div>
+
+      <!-- Pain Relievers -->
+      <div class="pain-relievers">
+        <div class="section-tag">Pain Relievers</div>
+        <p class="section-h">How We Eliminate Frustrations</p>
+        <ul class="item-list">
+          <li><span class="dot dot-red"></span><span><strong>Eliminates WhatsApp chaos</strong> — route changes sent via email amendment flow with single-use token confirmation in &lt;60 seconds</span></li>
+          <li><span class="dot dot-red"></span><span><strong>No more manual headcounts</strong> — QR check-in and digital boarding pass automate attendance tracking</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Ends blind spots</strong> — passengers and managers see live GPS on any device, no app download required</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Kills coordination overload</strong> — one dashboard replaces spreadsheets, calls, and 5 different messaging threads</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Removes audit risk</strong> — timestamped event log for every trip, driver, and passenger — export-ready for compliance</span></li>
+        </ul>
+      </div>
+
+      <!-- Gain Creators -->
+      <div class="gain-creators">
+        <div class="section-tag">Gain Creators</div>
+        <p class="section-h">How We Create Desired Outcomes</p>
+        <ul class="item-list">
+          <li><span class="dot dot-green"></span><span><strong>Saves ~8–10 hrs/week</strong> per operations coordinator — from scheduling, communication, and tracking tasks</span></li>
+          <li><span class="dot dot-green"></span><span><strong>Delivers cost visibility</strong> — utilisation rates and cost-per-seat data to justify the programme to Finance</span></li>
+          <li><span class="dot dot-green"></span><span><strong>Boosts employee satisfaction</strong> — reliable, on-time shuttle with real-time ETA improves commute NPS</span></li>
+          <li><span class="dot dot-green"></span><span><strong>ESG-ready reporting</strong> — CO₂ per trip, fleet utilisation, and headcount data for sustainability submissions</span></li>
+          <li><span class="dot dot-green"></span><span><strong>Scales without extra headcount</strong> — manage 5 or 50 vehicles from the same platform, same team</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- RIGHT: Customer Profile ──────────────────────── -->
+    <div class="customer-profile">
+
+      <!-- Customer Jobs -->
+      <div class="customer-jobs">
+        <div class="section-tag">Customer Jobs</div>
+        <p class="section-h">What They Need to Get Done</p>
+        <ul class="item-list">
+          <li><span class="dot dot-teal"></span><span><strong>Functional:</strong> Plan and publish daily/weekly shuttle routes and schedules</span></li>
+          <li><span class="dot dot-teal"></span><span><strong>Functional:</strong> Communicate schedule changes to drivers and passengers reliably</span></li>
+          <li><span class="dot dot-teal"></span><span><strong>Functional:</strong> Track attendance and ensure no passenger is left behind</span></li>
+          <li><span class="dot dot-teal"></span><span><strong>Functional:</strong> Report programme cost and utilisation to HR and Finance leadership</span></li>
+          <li><span class="dot dot-teal"></span><span><strong>Social:</strong> Be seen as a competent, proactive operations leader</span></li>
+          <li><span class="dot dot-teal"></span><span><strong>Emotional:</strong> Feel in control — not reactive — when things change last minute</span></li>
+        </ul>
+      </div>
+
+      <!-- Customer Pains -->
+      <div class="customer-pains">
+        <div class="section-tag">Pains</div>
+        <p class="section-h">Frustrations &amp; Risks They Face</p>
+        <ul class="item-list">
+          <li><span class="dot dot-red"></span><span>Spending <strong>hours every week</strong> coordinating over WhatsApp and fixing missed messages</span></li>
+          <li><span class="dot dot-red"></span><span><strong>No real-time visibility</strong> — passengers have no idea where their shuttle is or if it's delayed</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Manual attendance tracking</strong> on spreadsheets — updated after the fact, often inaccurate</span></li>
+          <li><span class="dot dot-red"></span><span><strong>Cannot justify programme cost</strong> to Finance — no data on utilisation or cost per seat</span></li>
+          <li><span class="dot dot-red"></span><span>Driver no-shows and <strong>last-minute substitutions</strong> cause chaos with no fallback system</span></li>
+          <li><span class="dot dot-red"></span><span>Fear of a <strong>passenger incident or complaint</strong> escalating with no audit trail to defend decisions</span></li>
+        </ul>
+      </div>
+
+      <!-- Customer Gains -->
+      <div class="customer-gains">
+        <div class="section-tag">Gains</div>
+        <p class="section-h">Outcomes &amp; Desires They Want</p>
+        <ul class="item-list">
+          <li><span class="dot dot-green"></span><span><strong>Peace of mind</strong> — knowing every route is running smoothly without constant check-ins</span></li>
+          <li><span class="dot dot-green"></span><span><strong>Management confidence</strong> — able to show Finance the numbers that justify the shuttle programme</span></li>
+          <li><span class="dot dot-green"></span><span><strong>Happy employees</strong> — reliable, on-time shuttles with real-time ETA reduce commute stress</span></li>
+          <li><span class="dot dot-green"></span><span><strong>Time back</strong> — reclaim hours spent on manual coordination for more strategic work</span></li>
+          <li><span class="dot dot-green"></span><span><strong>ESG credibility</strong> — data to demonstrate the company's commitment to sustainable commuting</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Fit / Match Row ────────────────────────────────── -->
+  <div class="fit-row">
+    <span class="fit-arrow">←</span>
+    <span class="fit-badge">✦ &nbsp;Product–Market Fit: Pain Relievers ↔ Pains &nbsp;|&nbsp; Gain Creators ↔ Gains</span>
+    <span class="fit-arrow">→</span>
+  </div>
+
+  <!-- ── Three Pillars ────────────────────────────────────── -->
+  <div class="match-row">
+    <div class="match-card">
+      <div class="match-icon control">🎛️</div>
+      <div>
+        <div class="m-title">Pillar 1 — Control</div>
+        <div class="m-desc">One dashboard for all routes, drivers, and passengers. Eliminates the fragmented toolset of spreadsheets + WhatsApp + calls.</div>
+      </div>
+    </div>
+    <div class="match-card">
+      <div class="match-icon confidence">📍</div>
+      <div>
+        <div class="m-title">Pillar 2 — Confidence</div>
+        <div class="m-desc">Passengers always know where their shuttle is. Drivers always have the right schedule. No surprises for anyone.</div>
+      </div>
+    </div>
+    <div class="match-card">
+      <div class="match-icon clarity">📊</div>
+      <div>
+        <div class="m-title">Pillar 3 — Clarity</div>
+        <div class="m-desc">Know your utilisation, cost per seat, and on-time performance at a glance. Make data-driven decisions — not gut-feel ones.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Summary Band ──────────────────────────────────────── -->
+  <div class="summary-band">
+    <div class="summary-item">
+      <div class="s-label">One-Liner Value Proposition</div>
+      <div class="s-value">"TransitFlow replaces the spreadsheets and WhatsApp chaos of corporate shuttle management with a single platform — giving ops teams real-time control and employees a seamless commute."</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">Primary ICP</div>
+      <div class="s-value">Transport / Admin Manager at a 500–5,000-person company running 5–50 employee shuttle vehicles in SE Asia. Currently using spreadsheets or WhatsApp to manage routes.</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">Dominant Pain → Primary Hook</div>
+      <div class="s-value">"I spend hours every week coordinating by WhatsApp and fixing mistakes."<br/><br/>→ <em style="color:#9DD8F0">"Route changes sent and confirmed in under 60 seconds."</em></div>
+    </div>
+  </div>
+
+</div><!-- end canvas-wrapper -->
+
+<div class="footer">
+  TransitFlow · Value Proposition Canvas · Go-To-Market Step 3 · March 2026 · Confidential
+</div>
+
+</body>
+</html>
