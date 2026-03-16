@@ -42,14 +42,37 @@
   nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,.1); }
   .nav-logo { font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -.5px; }
   .nav-logo span { color: var(--teal); }
-  .nav-links { display: flex; gap: 32px; margin-left: 48px; }
-  .nav-links a { font-size: 14px; font-weight: 500; color: var(--gray7); transition: color .15s; }
+  .nav-links { display: flex; gap: 32px; margin-left: 48px; align-items: center; }
+  .nav-links a { font-size: 14px; font-weight: 500; color: var(--gray7); transition: color .15s; text-decoration: none; }
   .nav-links a:hover { color: var(--navy); }
+  /* ── Platform dropdown ── */
+  .nav-dropdown { position: relative; }
+  .nav-dropdown-toggle { font-size: 14px; font-weight: 600; color: var(--teal); background: none; border: none; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 4px; padding: 0; transition: color .15s; }
+  .nav-dropdown-toggle:hover { color: var(--navy); }
+  .nav-dropdown-toggle::after { content: '▾'; font-size: 11px; }
+  .nav-dropdown-menu {
+    display: none; position: absolute; top: calc(100% + 14px); left: 50%; translate: -50% 0;
+    background: #fff; border: 1px solid var(--gray3); border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(30,58,95,.14); padding: 10px; min-width: 260px; z-index: 200;
+  }
+  .nav-dropdown:hover .nav-dropdown-menu,
+  .nav-dropdown-menu:hover { display: block; }
+  .nav-dropdown-menu a {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; color: var(--gray7); text-decoration: none; transition: background .12s;
+  }
+  .nav-dropdown-menu a:hover { background: var(--gray1); color: var(--navy); }
+  .nav-dd-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .nav-dd-text { display: flex; flex-direction: column; gap: 1px; }
+  .nav-dd-name { font-weight: 700; color: var(--navy); font-size: 13px; }
+  .nav-dd-role { font-size: 11px; color: var(--gray6); }
+  .nav-dd-divider { height: 1px; background: var(--gray3); margin: 6px 0; }
+  .nav-dd-all { font-weight: 700 !important; color: var(--teal) !important; font-size: 13px !important; }
   .nav-spacer { flex: 1; }
   .nav-auth { display: flex; align-items: center; gap: 10px; }
-  .btn-login { padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--navy); border: 1.5px solid var(--gray3); background: transparent; cursor: pointer; font-family: inherit; transition: all .15s; }
+  .btn-login { padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--navy); border: 1.5px solid var(--gray3); background: transparent; cursor: pointer; font-family: inherit; transition: all .15s; text-decoration: none; }
   .btn-login:hover { background: var(--gray1); border-color: var(--navy); }
-  .btn-signup { padding: 9px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; color: #fff; background: var(--teal); border: none; cursor: pointer; font-family: inherit; transition: all .15s; box-shadow: 0 3px 12px rgba(46,134,171,.35); }
+  .btn-signup { padding: 9px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; color: #fff; background: var(--teal); border: none; cursor: pointer; font-family: inherit; transition: all .15s; box-shadow: 0 3px 12px rgba(46,134,171,.35); text-decoration: none; }
   .btn-signup:hover { background: var(--teal2); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(46,134,171,.4); }
 
   /* ── SECTIONS ────────────────────────────────────────── */
@@ -319,11 +342,50 @@
     <a href="#demo">Demo</a>
     <a href="#pricing">Pricing</a>
     <a href="#testimonials">Customers</a>
+    <!-- Platform dropdown -->
+    <div class="nav-dropdown">
+      <button class="nav-dropdown-toggle">Platform</button>
+      <div class="nav-dropdown-menu">
+        <a href="transitflow_booking.html" target="_blank">
+          <div class="nav-dd-icon" style="background:#EBF4FD;">🎫</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">Guest Booking Portal</span><span class="nav-dd-role">Guest · Mobile</span></div>
+        </a>
+        <a href="transitflow_dashboard.html" target="_blank">
+          <div class="nav-dd-icon" style="background:#EBF4FD;">📋</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">Booking Dashboard</span><span class="nav-dd-role">Organizer · Live view</span></div>
+        </a>
+        <a href="transitflow_trips.html" target="_blank">
+          <div class="nav-dd-icon" style="background:#EBF4FD;">🚌</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">Trip Management</span><span class="nav-dd-role">Organizer · Routes</span></div>
+        </a>
+        <a href="transitflow_passenger.html" target="_blank">
+          <div class="nav-dd-icon" style="background:#EBF4FD;">📱</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">Passenger My Booking</span><span class="nav-dd-role">Guest · QR Ticket</span></div>
+        </a>
+        <a href="transitflow_email_amend.html" target="_blank">
+          <div class="nav-dd-icon" style="background:#FFF8EE;">📧</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">Email Amendment</span><span class="nav-dd-role">Automation · Self-service</span></div>
+        </a>
+        <a href="transitflow_reports.html" target="_blank">
+          <div class="nav-dd-icon" style="background:#F0FFF6;">📊</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">Reports &amp; Analytics</span><span class="nav-dd-role">Organizer · Revenue</span></div>
+        </a>
+        <a href="transitflow_settings.html" target="_blank">
+          <div class="nav-dd-icon" style="background:#EBF4FD;">⚙️</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">Project Settings</span><span class="nav-dd-role">Organizer · Config</span></div>
+        </a>
+        <div class="nav-dd-divider"></div>
+        <a href="app_hub.html" class="nav-dd-all">
+          <div class="nav-dd-icon" style="background:#EBF4FD;">🗂</div>
+          <div class="nav-dd-text"><span class="nav-dd-name">View All Platform Pages →</span></div>
+        </a>
+      </div>
+    </div>
   </div>
   <div class="nav-spacer"></div>
   <div class="nav-auth">
-    <button class="btn-login" onclick="showToast('Redirecting to login…')">Log in</button>
-    <button class="btn-signup" onclick="showToast('Starting free trial…')">Start Free Trial →</button>
+    <a href="transitflow_dashboard.html" class="btn-login" target="_blank">Log in</a>
+    <a href="transitflow_booking.html" class="btn-signup" target="_blank">Start Free Trial →</a>
   </div>
 </nav>
 
@@ -334,7 +396,7 @@
     <h1 class="hero-title">Stop managing<br>transport in<br><em>WhatsApp groups.</em></h1>
     <p class="hero-subtitle">TransitFlow replaces the chaos of spreadsheets, group chats, and missed pickups with one clean system — from booking to boarding, fully automated.</p>
     <div class="hero-cta">
-      <button class="btn-hero-primary" onclick="showToast('Starting your free 14-day trial…')">Get started free →</button>
+      <button class="btn-hero-primary" onclick="window.open('transitflow_booking.html','_blank')">Get started free →</button>
       <button class="btn-hero-secondary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">▶ See it in action</button>
     </div>
     <div class="hero-trust">
@@ -431,7 +493,7 @@
 <div class="bridge">
   <h2 class="bridge-title reveal">There's a better way. One system.<br><em>Zero chaos.</em> Total control.</h2>
   <p class="bridge-sub reveal">TransitFlow handles everything from passenger booking to driver dispatch — so you can focus on running a great event, not a logistics operation.</p>
-  <button class="bridge-btn reveal" onclick="showToast('Starting free trial…')">See how it works →</button>
+  <button class="bridge-btn reveal" onclick="window.open('app_hub.html','_blank')">See how it works →</button>
 </div>
 
 <!-- ══ HOW IT WORKS ════════════════════════════════════════ -->
@@ -802,7 +864,7 @@
         <li class="na">Advanced reporting</li>
         <li class="na">Custom disclaimer versions</li>
       </ul>
-      <button class="btn-price btn-price-outline" onclick="showToast('Starting Essential trial…')">Get started free</button>
+      <button class="btn-price btn-price-outline" onclick="window.open('transitflow_booking.html','_blank')">Get started free</button>
     </div>
     <div class="price-card featured reveal reveal-delay-2">
       <div class="price-popular">Most Popular</div>
@@ -820,7 +882,7 @@
         <li>Versioned disclaimer system</li>
         <li>Priority support</li>
       </ul>
-      <button class="btn-price btn-price-primary" onclick="showToast('Starting Professional trial…')">Start 14-day free trial</button>
+      <button class="btn-price btn-price-primary" onclick="window.open('transitflow_booking.html','_blank')">Start 14-day free trial</button>
     </div>
     <div class="price-card reveal reveal-delay-3">
       <div class="price-tag">Enterprise</div>
@@ -848,7 +910,7 @@
   <h2 class="cta-title reveal">Your next event runs itself.<br>Start free today.</h2>
   <p class="cta-sub reveal">Join event organizers who've eliminated transport chaos — and never looked back at a spreadsheet.</p>
   <div class="cta-actions reveal">
-    <button class="btn-hero-primary" onclick="showToast('Starting your free trial…')" style="font-size:17px;padding:18px 40px;">Get started — it's free →</button>
+    <button class="btn-hero-primary" onclick="window.open('transitflow_booking.html','_blank')" style="font-size:17px;padding:18px 40px;">Get started — it's free →</button>
     <button class="btn-hero-secondary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})" style="font-size:17px;padding:18px 32px;">▶ Watch the demo</button>
   </div>
   <p class="cta-note">14-day free trial · No credit card · Set up in 30 minutes</p>
