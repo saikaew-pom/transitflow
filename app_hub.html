@@ -126,6 +126,39 @@
   }
   .card-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
+  /* ── FEATURED DEMO BANNER ── */
+  .demo-banner-wrap { padding: 0 5% 0; background: var(--bg); }
+  .demo-banner {
+    display: flex; gap: 40px; align-items: center; flex-wrap: wrap;
+    background: linear-gradient(135deg, var(--navy) 0%, #1a4a6e 55%, #2E86AB 100%);
+    border-radius: 20px; padding: 40px 48px;
+    text-decoration: none; color: inherit;
+    position: relative; overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 8px 32px rgba(30,58,95,.2);
+  }
+  .demo-banner::before {
+    content: ''; position: absolute; top: -60%; right: -5%; width: 400px; height: 400px;
+    border-radius: 50%; background: radial-gradient(circle, rgba(91,227,166,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .demo-banner:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(30,58,95,.28); }
+  .demo-banner-left { flex: 1; min-width: 260px; position: relative; z-index: 2; }
+  .demo-banner-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #5be3a6; margin-bottom: 10px; }
+  .demo-banner-title { font-size: 28px; font-weight: 900; color: #fff; line-height: 1.2; margin-bottom: 12px; }
+  .demo-banner-desc { font-size: 14px; color: rgba(255,255,255,.65); line-height: 1.6; max-width: 440px; margin-bottom: 24px; }
+  .demo-banner-cta {
+    display: inline-flex; align-items: center;
+    background: #5be3a6; color: var(--navy); font-weight: 800; font-size: 14px;
+    padding: 11px 24px; border-radius: 10px;
+    transition: background .15s; box-shadow: 0 4px 16px rgba(91,227,166,.35);
+  }
+  .demo-banner:hover .demo-banner-cta { background: #47d494; }
+  .demo-banner-right { position: relative; z-index: 2; }
+  .demo-banner-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+  .demo-step { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,.75); font-weight: 500; }
+  .demo-step-num { font-size: 10px; font-weight: 800; background: rgba(255,255,255,.12); color: #5be3a6; border-radius: 4px; padding: 2px 6px; flex-shrink: 0; letter-spacing: .5px; }
+
   /* ── FLOW SECTION ── */
   .flow-wrap { background: var(--white); border-top: 1px solid var(--gray3); padding: 52px 5% 64px; }
   .flow-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0; margin-top: 32px; }
@@ -173,6 +206,30 @@
     <span class="hub-badge"><span class="hub-badge-dot"></span>Reports &amp; Analytics</span>
     <span class="hub-badge"><span class="hub-badge-dot"></span>Automation</span>
   </div>
+</div>
+
+<!-- FEATURED DEMO BANNER -->
+<div class="demo-banner-wrap">
+  <a href="TransitFlow_Full_Interactive_Demo.html" target="_blank" class="demo-banner">
+    <div class="demo-banner-left">
+      <div class="demo-banner-label">✦ Featured</div>
+      <div class="demo-banner-title">Full Interactive Demo</div>
+      <div class="demo-banner-desc">Take a guided 8-step walkthrough of the entire TransitFlow platform — from landing page through to booking, management, reporting, and email automation. Narrated hints, step-by-step journey.</div>
+      <div class="demo-banner-cta">Launch Interactive Demo →</div>
+    </div>
+    <div class="demo-banner-right">
+      <div class="demo-banner-steps">
+        <div class="demo-step"><span class="demo-step-num">01</span>Landing Page</div>
+        <div class="demo-step"><span class="demo-step-num">02</span>Guest Booking</div>
+        <div class="demo-step"><span class="demo-step-num">03</span>E-Ticket Confirmation</div>
+        <div class="demo-step"><span class="demo-step-num">04</span>Passenger View</div>
+        <div class="demo-step"><span class="demo-step-num">05</span>Organizer Dashboard</div>
+        <div class="demo-step"><span class="demo-step-num">06</span>Trip Management</div>
+        <div class="demo-step"><span class="demo-step-num">07</span>Reports &amp; Analytics</div>
+        <div class="demo-step"><span class="demo-step-num">08</span>Email Amendment</div>
+      </div>
+    </div>
+  </a>
 </div>
 
 <!-- GRID -->
@@ -378,7 +435,7 @@
 
 <!-- FOOTER -->
 <footer>
-  <p>© 2026 TransitFlow · <a href="index.html">Back to Home</a> · <a href="transitflow_demo.html" target="_blank">Watch Demo</a></p>
+  <p>© 2026 TransitFlow · <a href="index.html">Back to Home</a> · <a href="transitflow_demo.html" target="_blank">Product Demo</a> · <a href="TransitFlow_Full_Interactive_Demo.html" target="_blank">Full Interactive Demo</a></p>
 </footer>
 
 </body>
