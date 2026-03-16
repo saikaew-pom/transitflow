@@ -127,11 +127,11 @@
   .card-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
   /* ── FEATURED DEMO BANNER ── */
-  .demo-banner-wrap { padding: 0 5% 0; background: var(--bg); }
+  .demo-banner-wrap { padding: 48px 5% 48px; background: var(--bg); }
   .demo-banner {
     display: flex; gap: 40px; align-items: center; flex-wrap: wrap;
     background: linear-gradient(135deg, var(--navy) 0%, #1a4a6e 55%, #2E86AB 100%);
-    border-radius: 20px; padding: 40px 48px;
+    border-radius: 20px; padding: 44px 52px;
     text-decoration: none; color: inherit;
     position: relative; overflow: hidden;
     transition: transform .2s, box-shadow .2s;
@@ -148,12 +148,14 @@
   .demo-banner-title { font-size: 28px; font-weight: 900; color: #fff; line-height: 1.2; margin-bottom: 12px; }
   .demo-banner-desc { font-size: 14px; color: rgba(255,255,255,.65); line-height: 1.6; max-width: 440px; margin-bottom: 24px; }
   .demo-banner-cta {
-    display: inline-flex; align-items: center;
-    background: #5be3a6; color: var(--navy); font-weight: 800; font-size: 14px;
-    padding: 11px 24px; border-radius: 10px;
-    transition: background .15s; box-shadow: 0 4px 16px rgba(91,227,166,.35);
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #5be3a6; color: var(--navy); font-weight: 800; font-size: 15px;
+    padding: 13px 28px; border-radius: 10px;
+    transition: background .15s, transform .15s;
+    box-shadow: 0 4px 16px rgba(91,227,166,.4);
+    margin-top: 4px;
   }
-  .demo-banner:hover .demo-banner-cta { background: #47d494; }
+  .demo-banner:hover .demo-banner-cta { background: #47d494; transform: translateY(-1px); }
   .demo-banner-right { position: relative; z-index: 2; }
   .demo-banner-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
   .demo-step { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,.75); font-weight: 500; }
@@ -215,7 +217,7 @@
       <div class="demo-banner-label">✦ Featured</div>
       <div class="demo-banner-title">Full Interactive Demo</div>
       <div class="demo-banner-desc">Take a guided 8-step walkthrough of the entire TransitFlow platform — from landing page through to booking, management, reporting, and email automation. Narrated hints, step-by-step journey.</div>
-      <div class="demo-banner-cta">Launch Interactive Demo →</div>
+      <span class="demo-banner-cta">▶&nbsp; Launch Interactive Demo</span>
     </div>
     <div class="demo-banner-right">
       <div class="demo-banner-steps">
