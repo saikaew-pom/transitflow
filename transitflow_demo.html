@@ -731,38 +731,47 @@
 </div>
 
 <script>
+// ── Detect iframe context ─────────────────────────────────
+const IN_IFRAME = (function() {
+  try { return window.self !== window.top; } catch(e) { return true; }
+})();
+
 // ── Responsive stage scaling ─────────────────────────────
 function scaleStage() {
-  const stage = document.getElementById('stage');
-  const wrap  = document.getElementById('stage-wrap');
+  const stage      = document.getElementById('stage');
+  const wrap       = document.getElementById('stage-wrap');
+  const controlsEl = document.getElementById('controls');
   const STAGE_W = 960, STAGE_H = 540;
 
-  // Available space: full viewport width, viewport height minus controls + padding
-  const controlsEl = document.getElementById('controls');
-  const controlsH  = controlsEl ? controlsEl.offsetHeight + 28 : 60; // 28 = gap + padding
+  if (IN_IFRAME) {
+    // Embedded in iframe (e.g. index.html demo section):
+    // hide controls and remove body padding so stage fills the iframe fully
+    if (controlsEl) controlsEl.style.display = 'none';
+    document.body.style.padding = '0';
+    document.body.style.gap     = '0';
+    document.body.style.minHeight = '0';
+  }
+
+  const controlsH = (!IN_IFRAME && controlsEl)
+    ? controlsEl.offsetHeight + 28   // 28 = gap + body padding
+    : 0;
+  const bodyPad = IN_IFRAME ? 0 : 32;
+
   const availW = window.innerWidth;
-  const availH = window.innerHeight - controlsH - 32; // 32 = body top+bottom padding
+  const availH = window.innerHeight - controlsH - bodyPad;
 
-  const scaleByW = availW / STAGE_W;
-  const scaleByH = availH / STAGE_H;
-  const scale    = Math.min(1, scaleByW, scaleByH);
+  const scale = Math.min(1, availW / STAGE_W, availH / STAGE_H);
 
-  stage.style.transform = `scale(${scale})`;
-
-  // Size the wrapper to exactly the visible scaled stage footprint
-  const scaledW = Math.round(STAGE_W * scale);
-  const scaledH = Math.round(STAGE_H * scale);
-  wrap.style.width  = scaledW + 'px';
-  wrap.style.height = scaledH + 'px';
-
-  // Soften border-radius on tiny screens
+  stage.style.transform    = `scale(${scale})`;
   stage.style.borderRadius = scale < 0.5 ? '4px' : '8px';
+
+  // Size wrapper to the scaled footprint so body layout stays correct
+  wrap.style.width  = Math.round(STAGE_W * scale) + 'px';
+  wrap.style.height = Math.round(STAGE_H * scale) + 'px';
 }
 
-// Run on load and every resize
 window.addEventListener('resize', scaleStage);
 document.addEventListener('DOMContentLoaded', scaleStage);
-// Also call immediately in case DOMContentLoaded already fired
 scaleStage();
 
 // ── QR Grid ─────────────────────────────────────────────
