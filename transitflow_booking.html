@@ -303,13 +303,15 @@ select.form-control { padding-right: 32px; cursor: pointer; }
 }
 .phone-number-input { flex: 1; }
 .counter-row {
-  display: flex; align-items: center; gap: 0;
+  display: inline-flex; align-items: stretch; gap: 0;
   border: 1.5px solid var(--gray2);
   border-radius: 8px;
   overflow: hidden;
+  width: 100%;
 }
 .counter-btn {
   width: 38px; height: 42px;
+  min-width: 38px;
   background: var(--gray1);
   border: none;
   font-size: 18px;
@@ -321,8 +323,9 @@ select.form-control { padding-right: 32px; cursor: pointer; }
 }
 .counter-btn:hover { background: var(--gray2); }
 .counter-val {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 44px;
+  width: 44px;
+  box-sizing: border-box;
   text-align: center;
   font-size: 15px;
   font-weight: 700;
