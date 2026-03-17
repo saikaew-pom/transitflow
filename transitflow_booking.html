@@ -786,16 +786,16 @@ select.form-control { padding-right: 32px; cursor: pointer; }
     <div class="card-body" style="padding-top:14px">
 
       <!-- Outbound Leg -->
-      <div class="leg-card">
+      <div class="leg-card" id="outboundLegCard">
         <div class="leg-card-header">
-          <span class="leg-badge outbound">
+          <span class="leg-badge outbound" id="outbound-badge">
             <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
             Outbound — Airport to Hotel
           </span>
         </div>
         <div class="leg-form">
-          <div class="form-row">
-            <div class="form-group">
+          <div class="form-row" id="route-row-out">
+            <div class="form-group" id="fg-out-airport">
               <label>Airport <span class="req">*</span></label>
               <div class="select-wrap">
                 <select class="form-control filled">
@@ -804,7 +804,7 @@ select.form-control { padding-right: 32px; cursor: pointer; }
                 </select>
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="fg-out-hotel">
               <label>Hotel <span class="req">*</span></label>
               <div class="select-wrap">
                 <select class="form-control filled">
@@ -847,7 +847,7 @@ select.form-control { padding-right: 32px; cursor: pointer; }
               </div>
             </div>
           </div>
-          <div class="info-strip">
+          <div class="info-strip" id="outbound-info">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
             Meeting point: <strong style="margin-left:4px">Arrivals Hall Gate 5 — TransitFlow Desk</strong>
           </div>
@@ -960,7 +960,7 @@ select.form-control { padding-right: 32px; cursor: pointer; }
     </div>
     <div class="price-body">
       <div class="price-row">
-        <span class="pr-label">→ Outbound (Airport → Hotel)</span>
+        <span class="pr-label" id="price-out-label">→ Outbound (Airport → Hotel)</span>
         <span class="pr-val" id="price-out">฿1,600</span>
       </div>
       <div class="price-row" id="promo-out-row" style="display:none">
@@ -1115,15 +1115,101 @@ select.form-control { padding-right: 32px; cursor: pointer; }
   function selectTripType(t) {
     document.getElementById('opt-oneway').classList.toggle('selected', t === 'oneway');
     document.getElementById('opt-round').classList.toggle('selected', t === 'round');
-    document.getElementById('returnLegCard').classList.toggle('hidden', t === 'oneway');
-    document.getElementById('return-price-row').style.display = t === 'oneway' ? 'none' : '';
-    recalcPrice();
+
+    const dirBoth = document.getElementById('dir-both');
+
+    if (t === 'round') {
+      // Round trip: always show "both" and select it
+      dirBoth.style.display = '';
+      selectDir('both');
+    } else {
+      // One way: hide the "both" option (it requires 2 legs)
+      dirBoth.style.display = 'none';
+      // If "both" was previously selected, default to Airport → Hotel
+      const wasBoth = dirBoth.classList.contains('selected');
+      if (wasBoth) selectDir('out');
+      // else keep whichever one-way direction is already selected
+    }
   }
+
+  // ── Shared SVG icons for badge ────────────────────────────────────────────
+  var SVG_PLANE  = '<svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>';
+  var SVG_HOTEL  = '<svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>';
+  var SVG_INFO   = '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>';
 
   // ── Direction ─────────────────────────────────────────────────────────────
   function selectDir(d) {
+    // Update visual selection
     ['both','out','ret'].forEach(x => document.getElementById('dir-'+x).classList.remove('selected'));
     document.getElementById('dir-'+d).classList.add('selected');
+
+    var badge       = document.getElementById('outbound-badge');
+    var infoStrip   = document.getElementById('outbound-info');
+    var routeRow    = document.getElementById('route-row-out');
+    var airportFg   = document.getElementById('fg-out-airport');
+    var hotelFg     = document.getElementById('fg-out-hotel');
+    var priceLabel  = document.getElementById('price-out-label');
+    var returnCard  = document.getElementById('returnLegCard');
+    var retPriceRow = document.getElementById('return-price-row');
+
+    if (d === 'ret') {
+      // ── Hotel → Airport ────────────────────────────────────────────────
+      // Badge: swap to return style
+      badge.className = 'leg-badge return';
+      badge.innerHTML = SVG_HOTEL + ' Single Leg — Hotel to Airport';
+
+      // Info strip: hotel pickup
+      infoStrip.innerHTML = SVG_INFO + ' Meeting point: <strong style="margin-left:4px">Hotel Lobby — Valet Drop-off Bay</strong>';
+
+      // Form fields: Hotel first, Airport second
+      routeRow.insertBefore(hotelFg, airportFg);
+
+      // Update hotel label (from "Hotel" to "From: Hotel") for clarity
+      hotelFg.querySelector('label').innerHTML = 'Hotel <span class="req">*</span>';
+      airportFg.querySelector('label').innerHTML = 'Airport <span class="req">*</span>';
+
+      // Price summary
+      if (priceLabel) priceLabel.textContent = '→ Hotel → Airport';
+
+      // Hide return leg card (already a one-way)
+      returnCard.classList.add('hidden');
+      retPriceRow.style.display = 'none';
+
+    } else {
+      // ── Airport → Hotel (both or out) ─────────────────────────────────
+      // Badge: outbound style
+      badge.className = 'leg-badge outbound';
+      badge.innerHTML = SVG_PLANE + (d === 'both'
+        ? ' Outbound — Airport to Hotel'
+        : ' Single Leg — Airport to Hotel');
+
+      // Info strip: arrivals hall
+      infoStrip.innerHTML = SVG_INFO + ' Meeting point: <strong style="margin-left:4px">Arrivals Hall Gate 5 — TransitFlow Desk</strong>';
+
+      // Form fields: Airport first, Hotel second
+      routeRow.insertBefore(airportFg, hotelFg);
+
+      // Restore labels
+      airportFg.querySelector('label').innerHTML = 'Airport <span class="req">*</span>';
+      hotelFg.querySelector('label').innerHTML   = 'Hotel <span class="req">*</span>';
+
+      // Price summary
+      if (priceLabel) priceLabel.textContent = d === 'both'
+        ? '→ Outbound (Airport → Hotel)'
+        : '→ Airport → Hotel';
+
+      // Show or hide return leg card based on trip type
+      if (d === 'both') {
+        returnCard.classList.remove('hidden');
+        retPriceRow.style.display = '';
+      } else {
+        // One-way Airport → Hotel
+        returnCard.classList.add('hidden');
+        retPriceRow.style.display = 'none';
+      }
+    }
+
+    recalcPrice();
   }
 
   // ── Counters ──────────────────────────────────────────────────────────────
