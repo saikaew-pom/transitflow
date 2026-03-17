@@ -281,6 +281,27 @@ select.form-control { padding-right: 32px; cursor: pointer; }
   width: 16px; height: 16px; fill: var(--gray4); pointer-events: none;
 }
 .input-icon-wrap .form-control { padding-left: 36px; }
+.phone-field-wrap {
+  display: flex; gap: 8px; align-items: stretch;
+}
+.phone-country-code {
+  flex: 0 0 auto;
+  height: 42px;
+  padding: 0 28px 0 10px;
+  border: 1.5px solid var(--gray2);
+  border-radius: 10px;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 6px center / 16px 16px;
+  appearance: none; -webkit-appearance: none;
+  font-size: 13px; color: var(--gray5);
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.phone-country-code:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(46,134,171,.15);
+}
+.phone-number-input { flex: 1; }
 .counter-row {
   display: flex; align-items: center; gap: 0;
   border: 1.5px solid var(--gray2);
@@ -1066,9 +1087,33 @@ select.form-control { padding-right: 32px; cursor: pointer; }
       </div>
       <div class="form-group" style="margin-top:10px">
         <label>Phone Number</label>
-        <div class="input-icon-wrap">
-          <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-          <input type="tel" class="form-control filled" value="+44 7700 123456"/>
+        <div class="phone-field-wrap">
+          <select class="phone-country-code" id="phoneCountryCode">
+            <option value="+66">🇹🇭 +66</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44" selected>🇬🇧 +44</option>
+            <option value="+61">🇦🇺 +61</option>
+            <option value="+65">🇸🇬 +65</option>
+            <option value="+81">🇯🇵 +81</option>
+            <option value="+82">🇰🇷 +82</option>
+            <option value="+86">🇨🇳 +86</option>
+            <option value="+91">🇮🇳 +91</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+60">🇲🇾 +60</option>
+            <option value="+62">🇮🇩 +62</option>
+            <option value="+63">🇵🇭 +63</option>
+            <option value="+64">🇳🇿 +64</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="+49">🇩🇪 +49</option>
+            <option value="+39">🇮🇹 +39</option>
+            <option value="+34">🇪🇸 +34</option>
+            <option value="+7">🇷🇺 +7</option>
+            <option value="+55">🇧🇷 +55</option>
+          </select>
+          <div class="input-icon-wrap phone-number-input">
+            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            <input type="tel" class="form-control filled" placeholder="7700 123456" value="7700 123456"/>
+          </div>
         </div>
       </div>
     </div>
@@ -1077,7 +1122,7 @@ select.form-control { padding-right: 32px; cursor: pointer; }
   <!-- Submit -->
   <button class="btn-submit" onclick="submitBooking()">
     <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    Confirm Booking — Pay via Stripe
+    Confirm Booking
   </button>
   <div class="submit-note">
     By confirming, you agree to the <a href="#">disclaimer</a> you acknowledged above.
@@ -1276,8 +1321,6 @@ select.form-control { padding-right: 32px; cursor: pointer; }
   function selectPay(p) {
     ['stripe','cash','company'].forEach(x => document.getElementById('pay-'+x).classList.remove('selected'));
     document.getElementById('pay-'+p).classList.add('selected');
-    const labels = { stripe: 'Confirm Booking — Pay via Stripe', cash: 'Confirm Booking — Pay Cash on Arrival', company: 'Confirm Booking — Charge to Company' };
-    document.querySelector('.btn-submit').childNodes[1].textContent = ' ' + labels[p];
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
